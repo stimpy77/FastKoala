@@ -21,6 +21,6 @@ In all cases, to use, right-click on the project node in Solution Explorer and c
 
 This project *does not* use automated unit tests. :(
 
-## How it works ##
+### How it works ###
 
 This Visual Studio extension will modify your project by injecting a custom MSBuild target that invokes the TransformXml task with the custom config paths as parameters. It does not use NuGet and it does not import an external .targets file in order to support build-time transformations--at least, not at this time, these behaviors might be added down the road but there are several reasons to avoid any of that.
