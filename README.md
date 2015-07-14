@@ -18,3 +18,5 @@ and Web.config at project root becomes transient (and should never be added to s
 Initial commit also supports basic class libraries (which can have config files) and Windows apps (other than ClickOnce apps) that need to transform out to the bin\Debug or bin\Release directory as AssemblyName.exe.config.
 
 In all cases, to use, right-click on the project node in Solution Explorer and choose "Enable build-time transformations"
+
+This project *does not* use automated unit tests. :(
