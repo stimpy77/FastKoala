@@ -1,4 +1,4 @@
-# FastKoala
+# Fast Koala
 Enables build-time config transforms for various project types including web apps
 
 Current status: Initial commit performs basic functionality for empty web sites that need build-time transformations.
