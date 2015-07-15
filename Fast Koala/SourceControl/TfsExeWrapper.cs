@@ -44,8 +44,8 @@ namespace Wijits.FastKoala.SourceControl
                 }
             }
             var statusOutput = TaskResult = await TfExec("info \"" + filename + "\"");
-            if (statusOutput.StartsWith("No items match")) return true;
-            return false;
+            if (statusOutput.StartsWith("No items match")) return false;
+            return true;
         }
 
         /// <summary>
