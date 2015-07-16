@@ -98,6 +98,7 @@ namespace Wijits.FastKoala.Transformations
             else prepresult = await PrepEnableBuildTimeConfigTransformationsForBin();
 
             if (prepresult == false) return false;
+            ProjectProperties.BuildTimeTransformsEnabled = true;
 
             // 5. inject target definition to project
             /* web app (this should already be in the project so don't add it):
@@ -221,7 +222,7 @@ namespace Wijits.FastKoala.Transformations
                     _logger.LogInfo("Creating " + xfrmname);
                     WriteFromManifest(@"Transforms\Web.{0}.config", cfgname, "Release", xfrmpath);
                     var item = AddItemToProject(xfrmpath);
-                    item.AddMetadata("DependentUpon", baseConfigFile);
+                    item.AddMetadata("DependentUpon", cfgfilename);
                     await _io.AddIfProjectIsSourceControlled(Project, cfgfilename);
                 }
             }

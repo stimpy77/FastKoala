@@ -88,9 +88,12 @@ namespace Wijits.FastKoala.Utilities
                     projectRoot = ProjectRootElement.Create(xr);
 
                     // clearing dirty flag
-                    var ms = new MemoryStream();
-                    var sw = new StreamWriter(ms);
-                    projectRoot.Save(sw);
+                    using (var ms = new MemoryStream())
+                    {
+                        using (var sw = new StreamWriter(ms)) { 
+                            projectRoot.Save(sw);
+                        }
+                    }
                 }
 
                 // remember to throw out cache if the project is ever overwritten

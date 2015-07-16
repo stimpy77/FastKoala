@@ -79,11 +79,20 @@ namespace Wijits.FastKoala
             mcs.AddCommand(enableBuildTimeTransformationsProjectMenuItem);
         }
 
-        private void EnableBuildTimeTransformationsMenuItemProject_BeforeQueryStatus(object sender, EventArgs e)
+        private async void EnableBuildTimeTransformationsMenuItemProject_BeforeQueryStatus(object sender, EventArgs e)
         {
             // get the menu that fired the event
             var menuCommand = sender as OleMenuCommand;
             if (menuCommand == null) return;
+
+            menuCommand.Visible = false;
+            menuCommand.Enabled = false;
+
+            var project = GetSelectedProject();
+
+            var transformationsEnabler = await GetTransformationsEnabler(project);
+            if (!transformationsEnabler.CanEnableBuildTimeTransformations)
+                return;
 
             menuCommand.Visible = true;
             menuCommand.Enabled = true;
