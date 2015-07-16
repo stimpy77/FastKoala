@@ -192,6 +192,10 @@
     <EmbeddedResource Include="Resources\Transforms\Web.Release.config" />
     <EmbeddedResource Include="Resources\Transforms\App.config" />
     <EmbeddedResource Include="Resources\Transforms\Web.config" />
+    <Content Include="LICENSE.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>
