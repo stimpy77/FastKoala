@@ -1,7 +1,7 @@
 # Fast Koala
 Enables build-time config transforms for various project types including web apps (but not web sites, and Azure is not supported at this time), with future plans to also ease config name management and add MSBuild scripts (Imports directives to custom .targets files) to a project.
 
-Current status: Initial commit performs basic functionality for empty web sites that need build-time transformations.
+Current status: Initial commit performs basic functionality for empty web apps (not sites) that need build-time transformations.
 
     Web.config
     Web.Debug.config
