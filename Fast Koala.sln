@@ -7,10 +7,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fast Koala", "Fast Koala\Fa
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug - AppVeyor|Any CPU = Debug - AppVeyor|Any CPU
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DA5E3103-73B9-4985-8097-1A4E56C8128E}.Debug - AppVeyor|Any CPU.ActiveCfg = Debug - AppVeyor|Any CPU
+		{DA5E3103-73B9-4985-8097-1A4E56C8128E}.Debug - AppVeyor|Any CPU.Build.0 = Debug - AppVeyor|Any CPU
 		{DA5E3103-73B9-4985-8097-1A4E56C8128E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DA5E3103-73B9-4985-8097-1A4E56C8128E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DA5E3103-73B9-4985-8097-1A4E56C8128E}.Release|Any CPU.ActiveCfg = Release|Any CPU
