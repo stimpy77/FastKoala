@@ -4,6 +4,7 @@
     <Identity Id="5a540277-c820-4fb4-9cb5-f878fc9af04e" Version="0.1" Language="en-US" Publisher="Jon Davis &amp;lt;jon@jondavis.net&amp;gt;" />
     <DisplayName>Fast Koala</DisplayName>
     <Description xml:space="preserve">Enables config file transformations at build-time for common project types including web apps. </Description>
+    <License>LICENSE.txt</License>
   </Metadata>
   <Installation InstalledByMsi="false">
     <InstallationTarget Version="[12.0,13.0)" Id="Microsoft.VisualStudio.Pro" />
