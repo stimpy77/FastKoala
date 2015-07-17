@@ -21,6 +21,14 @@ In all cases, to use, right-click on the project node or the [Web|App].config in
 
 This project *does not* use automated unit tests. :(
 
+###Critical Limitations###
+
+Basic support for projects under source control is planned but not yet implemented. Please do not use if you are using source control, especially if you are using TFS.
+
+Web sites are not supported and will never be supported.
+
+Visual Studio 2015 and ASP.NET 5 are not yet supported and the latter might not ever be supported.
+
 ### How it works ###
 
 This Visual Studio extension will modify your project by injecting a custom MSBuild target that invokes the TransformXml task with the custom config paths as parameters. It does not use NuGet and it does not import an external .targets file in order to support build-time transformations--at least, not at this time, these behaviors might be added down the road but there are several reasons to avoid any of that.
