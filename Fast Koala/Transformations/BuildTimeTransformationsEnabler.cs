@@ -367,6 +367,13 @@ namespace Wijits.FastKoala.Transformations
             // 4c. inject warning xml to base
             InjectBaseConfigWarningComment(baseConfigFullPath);
 
+            // 4d. add Clean target cleanup of web.config
+            var projectRoot = Project.GetProjectRoot();
+            var cleanTarget = projectRoot.AddTarget("RemoveConfigOnClean");
+            cleanTarget.AfterTargets = "Clean";
+            var task = cleanTarget.AddTask("Delete");
+            task.SetParameter("Files", "$(AppCfgType).config");
+
             return true;
         }
 
