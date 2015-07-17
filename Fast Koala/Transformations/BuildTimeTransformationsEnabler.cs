@@ -318,17 +318,37 @@ namespace Wijits.FastKoala.Transformations
                     var oldxfrmpath = Path.Combine(Project.GetDirectory(), xfrmname);
                     var xfrmpath = Path.Combine(ProjectProperties.ConfigDir, xfrmname);
                     var xfrmFullPath = Path.Combine(Project.GetDirectory(), xfrmpath);
+                    var oldxfrmname = (new FileInfo(oldxfrmpath)).Name;
+                    var replaceXfrm = false;
                     if (!File.Exists(xfrmpath) && File.Exists(oldxfrmpath))
                     {
-                        _logger.LogInfo("Moving " + xfrmname + " to " + xfrmpath);
-                        await _io.Move(oldxfrmpath, xfrmFullPath);
+                        // check to see if it's the Visual Studio default (unmodified)
+                        // if so, replace it
+                        // if not, move it
+                        var oldXfrmContent = File.ReadAllText(oldxfrmpath);
+                        var defaultXfrmContent = GetManifestResourceStreamContent(@"Transforms\" +
+                                                             (oldxfrmname.Replace(".config", ".Default.config")));
+                        var isUnmodifiedDefault = oldXfrmContent == defaultXfrmContent;
+                        if (isUnmodifiedDefault)
+                        {
+                            await _io.Delete(oldxfrmpath);
+                            replaceXfrm = true;
+                        }
+                        else
+                        {
+                            _logger.LogInfo("Moving " + xfrmname + " to " + xfrmpath);
+                            await _io.Move(oldxfrmpath, xfrmFullPath);
+                        }
                     }
-                    else if (!File.Exists(xfrmpath) && !File.Exists(oldxfrmpath))
+                    if (replaceXfrm || (!File.Exists(xfrmpath) && !File.Exists(oldxfrmpath)))
                     {
                         _logger.LogInfo("Creating " + xfrmpath);
                         WriteFromManifest(@"Transforms\Web.{0}.config", cfgname, "Release", xfrmpath);
-                        var item = AddItemToProject(xfrmpath);
-                        item.AddMetadata("DependentUpon", newBaseConfigFile);
+                        if (!replaceXfrm)
+                        {
+                            var item = AddItemToProject(xfrmpath);
+                            item.AddMetadata("DependentUpon", newBaseConfigFile);
+                        }
                         await _io.AddIfProjectIsSourceControlled(Project, xfrmFullPath);
                     }
 
@@ -346,6 +366,19 @@ namespace Wijits.FastKoala.Transformations
             InjectBaseConfigWarningComment(baseConfigFullPath);
 
             return true;
+        }
+
+        private string GetManifestResourceStreamContent(string resourceName)
+        {
+            resourceName = typeof(FastKoalaPackage).Namespace + @".Resources." + resourceName.Replace("\\", ".");
+            var assembly = typeof(BuildTimeTransformationsEnabler).Assembly;
+            using (var stream = assembly.GetManifestResourceStream(resourceName))
+            {
+                using (var sr = new StreamReader(stream))
+                {
+                    return sr.ReadToEnd();
+                }
+            }
         }
 
         private void InjectBaseConfigWarningComment(string baseConfigFullPath)
