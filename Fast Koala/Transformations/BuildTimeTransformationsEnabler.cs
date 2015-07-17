@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Xml;
 using EnvDTE;
 using Microsoft.Build.Construction;
 using Microsoft.Build.Evaluation;
@@ -260,13 +261,14 @@ namespace Wijits.FastKoala.Transformations
             // 4. if inline transformations, move and/or create web.config and related transforms to config folder
             // 4b. update project XML for moved files
             var baseConfig = Project.GetConfigFile();
+            string baseConfigFullPath;
             if (string.IsNullOrEmpty(baseConfig))
             {
                 // create the App/Web.config file
                 var cfgfilename = string.Format(@"{0}.config", ProjectProperties.AppCfgType);
                 var baseConfigFile = string.Format(@"{0}.{1}.config", ProjectProperties.AppCfgType, ProjectProperties.CfgBaseName);
                 var baseConfigPath = string.Format(@"{0}\{1}", ProjectProperties.ConfigDir, baseConfigFile);
-                var baseConfigFullPath = Path.Combine(Project.GetDirectory(), baseConfigPath);
+                baseConfigFullPath = Path.Combine(Project.GetDirectory(), baseConfigPath);
                 _logger.LogInfo("Creating " + baseConfigPath);
                 WriteFromManifest(@"Transforms\{0}.config", ProjectProperties.AppCfgType, "Web", baseConfigFullPath);
                 await _io.AddIfProjectIsSourceControlled(Project, baseConfigFullPath);
@@ -296,7 +298,7 @@ namespace Wijits.FastKoala.Transformations
                 var cfgfullpath = Path.Combine(Project.GetDirectory(), oldcfgfile);
                 var newBaseConfigFile = string.Format(@"{0}.{1}.config", ProjectProperties.AppCfgType, ProjectProperties.CfgBaseName);
                 var newBaseConfigPath = string.Format(@"{0}\{1}", ProjectProperties.ConfigDir, newBaseConfigFile);
-                var newBaseConfigFullPath = Path.Combine(Project.GetDirectory(), newBaseConfigPath);
+                var newBaseConfigFullPath = baseConfigFullPath = Path.Combine(Project.GetDirectory(), newBaseConfigPath);
                 _logger.LogInfo("Moving " + oldcfgfile + " to " + newBaseConfigPath);
                 var parentDir = Directory.GetParent(newBaseConfigFullPath).FullName;
                 if (!Directory.Exists(parentDir)) Directory.CreateDirectory(parentDir);
@@ -339,11 +341,29 @@ namespace Wijits.FastKoala.Transformations
                     metadata.Value = newBaseConfigFile;
                 }
             }
-            // 4c. inject warning xml to base
 
-            // return true;
-            //throw new NotImplementedException();
+            // 4c. inject warning xml to base
+            InjectBaseConfigWarningComment(baseConfigFullPath);
+
             return true;
+        }
+
+        private void InjectBaseConfigWarningComment(string baseConfigFullPath)
+        {
+            var xml = new XmlDocument();
+            xml.Load(baseConfigFullPath);
+            var commentXml = string.Format(@"
+    !! WARNING !!
+    Do not modify the {0}.config file directly. Always edit the configurations in
+    - {1}\{0}.{2}.config
+    - {1}\{0}.[Debug|Release].config
+", ProjectProperties.AppCfgType, ProjectProperties.ConfigDir, ProjectProperties.CfgBaseName);
+            var commentXmlNode = xml.CreateComment(commentXml);
+            if (xml.DocumentElement.ChildNodes.Count > 0)
+                xml.DocumentElement.InsertBefore(commentXmlNode, xml.DocumentElement.FirstChild);
+            else xml.DocumentElement.AppendChild(commentXmlNode);
+            _io.Checkout(baseConfigFullPath);
+            xml.Save(baseConfigFullPath);
         }
 
         private ProjectItemElement AddItemToProject(string itemRelativePath)
