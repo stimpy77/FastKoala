@@ -23,7 +23,7 @@ This project *does not* use automated unit tests. :(
 
 ###Critical Limitations###
 
-Basic support for projects under source control is planned but not yet implemented. Please do not use if you are using source control, especially if you are using TFS.
+Basic support for projects under source control is planned but not yet implemented. Please do not use if you are using Visual Studio integrated source control, namely if you are using TFS.
 
 Web sites are not supported and will never be supported.
 
