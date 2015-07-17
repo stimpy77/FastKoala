@@ -1,7 +1,7 @@
 # Fast Koala
-Enables build-time config transforms for various project types including web apps, with future plans to also ease config name management and add MSBuild scripts (Imports directives to custom .targets files) to a project.
+Enables build-time config transforms for various project types including web apps (but not web sites, and Azure is not supported at this time), with future plans to also ease config name management and add MSBuild scripts (Imports directives to custom .targets files) to a project.
 
-Current status: Initial commit performs basic functionality for empty web sites that need build-time transformations.
+Current status: Initial commit performs basic functionality for empty web apps (not sites) that need build-time transformations.
 
     Web.config
     Web.Debug.config
@@ -17,9 +17,17 @@ and Web.config at project root becomes transient (and should never be added to s
 
 Initial commit also supports basic class libraries (which can have config files) and Windows apps (other than ClickOnce apps) that need to transform out to the bin\Debug or bin\Release directory as AssemblyName.exe.config.
 
-In all cases, to use, right-click on the project node in Solution Explorer and choose "Enable build-time transformations"
+In all cases, to use, right-click on the project node or the [Web|App].config in Solution Explorer and choose "Enable build-time transformations"
 
 This project *does not* use automated unit tests. :(
+
+###Critical Limitations###
+
+Basic support for projects under source control is planned but not yet implemented. Please do not use if you are using source control, especially if you are using TFS.
+
+Web sites are not supported and will never be supported.
+
+Visual Studio 2015 and ASP.NET 5 are not yet supported and the latter might not ever be supported.
 
 ### How it works ###
 
