@@ -51,6 +51,7 @@
             this.txtConfigDir.Name = "txtConfigDir";
             this.txtConfigDir.Size = new System.Drawing.Size(307, 20);
             this.txtConfigDir.TabIndex = 1;
+            this.txtConfigDir.Validating += new System.ComponentModel.CancelEventHandler(this.txtConfigDir_Validating);
             // 
             // cmdCancel
             // 
