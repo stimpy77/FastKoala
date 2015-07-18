@@ -77,6 +77,14 @@ namespace Wijits.FastKoala
             enableBuildTimeTransformationsProjectMenuItem.BeforeQueryStatus +=
                 EnableBuildTimeTransformationsMenuItemProject_BeforeQueryStatus;
             mcs.AddCommand(enableBuildTimeTransformationsProjectMenuItem);
+
+            var addMissingTransformationsCmd = new CommandID(GuidList.guidFastKoalaProjItemMenuCmdSet,
+                (int)PkgCmdIDList.cmdidAddMissingTransformsProjItem);
+            var addMissingTransformationsMenuItem =
+                new OleMenuCommand(AddMissingTransformationsMenuItem_Invoke, addMissingTransformationsCmd);
+            addMissingTransformationsMenuItem.BeforeQueryStatus +=
+                AddMissingTransformationsMenuItem_BeforeQueryStatus;
+            mcs.AddCommand(addMissingTransformationsMenuItem);
         }
 
         private async void EnableBuildTimeTransformationsMenuItemProject_BeforeQueryStatus(object sender, EventArgs e)
@@ -98,40 +106,6 @@ namespace Wijits.FastKoala
             menuCommand.Enabled = true;
         }
 
-        private async void EnableBuildTimeTransformationsMenuItem_BeforeQueryStatus(object sender, EventArgs e)
-        {
-            // get the menu that fired the event
-            var menuCommand = sender as OleMenuCommand;
-            if (menuCommand == null) return;
-
-            // start by assuming that the menu will not be shown
-            menuCommand.Visible = false;
-            menuCommand.Enabled = false;
-
-            IVsHierarchy hierarchy = null;
-            var itemid = VSConstants.VSITEMID_NIL;
-
-            if (!IsSingleProjectItemSelection(out hierarchy, out itemid)) return;
-            // Get the file path
-            string itemFullPath = null;
-            ((IVsProject) hierarchy).GetMkDocument(itemid, out itemFullPath);
-            var transformFileInfo = new FileInfo(itemFullPath);
-
-            // then check if the file is named 'web.config'
-            var isConfig = Regex.IsMatch(transformFileInfo.Name, @"[Web|App](\.\w+)?\.config",
-                RegexOptions.IgnoreCase);
-
-            // if not leave the menu hidden
-            if (!isConfig) return;
-            var project = GetSelectedProject();
-
-            var transformationsEnabler = await GetTransformationsEnabler(project);
-            if (!transformationsEnabler.CanEnableBuildTimeTransformations)
-                return;
-
-            menuCommand.Visible = true;
-            menuCommand.Enabled = true;
-        }
 
         private async Task<BuildTimeTransformationsEnabler> GetTransformationsEnabler(EnvDTE.Project project)
         {
@@ -172,6 +146,42 @@ namespace Wijits.FastKoala
 
         #endregion
 
+#region EnableBuildTimeTransformations
+        private async void EnableBuildTimeTransformationsMenuItem_BeforeQueryStatus(object sender, EventArgs e)
+        {
+            // get the menu that fired the event
+            var menuCommand = sender as OleMenuCommand;
+            if (menuCommand == null) return;
+
+            // start by assuming that the menu will not be shown
+            menuCommand.Visible = false;
+            menuCommand.Enabled = false;
+
+            IVsHierarchy hierarchy = null;
+            var itemid = VSConstants.VSITEMID_NIL;
+
+            if (!IsSingleProjectItemSelection(out hierarchy, out itemid)) return;
+            // Get the file path
+            string itemFullPath = null;
+            ((IVsProject)hierarchy).GetMkDocument(itemid, out itemFullPath);
+            var transformFileInfo = new FileInfo(itemFullPath);
+
+            // then check if the file is named 'web.config'
+            var isConfig = Regex.IsMatch(transformFileInfo.Name, @"[Web|App](\.\w+)?\.config",
+                RegexOptions.IgnoreCase);
+
+            // if not leave the menu hidden
+            if (!isConfig) return;
+            var project = GetSelectedProject();
+
+            var transformationsEnabler = await GetTransformationsEnabler(project);
+            if (!transformationsEnabler.CanEnableBuildTimeTransformations)
+                return;
+
+            menuCommand.Visible = true;
+            menuCommand.Enabled = true;
+        }
+
         /// <summary>
         ///     This function is the callback used to execute a command when the a menu item is clicked.
         ///     See the Initialize method to see how the menu item is associated to this function using
@@ -200,6 +210,54 @@ namespace Wijits.FastKoala
             var transformationsEnabler = await GetTransformationsEnabler(project);
             await transformationsEnabler.EnableBuildTimeConfigTransformations();
         }
+
+#endregion
+
+        #region AddMissingTransformations
+
+        private async void AddMissingTransformationsMenuItem_BeforeQueryStatus(object sender, EventArgs e)
+        {
+            // get the menu that fired the event
+            var menuCommand = sender as OleMenuCommand;
+            if (menuCommand == null) return;
+
+            // start by assuming that the menu will not be shown
+            menuCommand.Visible = false;
+            menuCommand.Enabled = false;
+
+            IVsHierarchy hierarchy = null;
+            var itemid = VSConstants.VSITEMID_NIL;
+
+            if (!IsSingleProjectItemSelection(out hierarchy, out itemid)) return;
+            // Get the file path
+            string itemFullPath = null;
+            ((IVsProject)hierarchy).GetMkDocument(itemid, out itemFullPath);
+            var transformFileInfo = new FileInfo(itemFullPath);
+
+            // then check if the file is named 'web.config'
+            var isConfig = Regex.IsMatch(transformFileInfo.Name, @"[Web|App](\.\w+)?\.config",
+                RegexOptions.IgnoreCase);
+
+            // if not leave the menu hidden
+            if (!isConfig) return;
+
+            var project = GetSelectedProject();
+            var transformationsEnabler = await GetTransformationsEnabler(project);
+            if (transformationsEnabler.HasMissingTransforms)
+            {
+                menuCommand.Visible = true;
+                menuCommand.Enabled = true;
+            }
+        }
+
+        private async void AddMissingTransformationsMenuItem_Invoke(object sender, EventArgs e)
+        {
+            var project = GetSelectedProject();
+            var transformationsEnabler = await GetTransformationsEnabler(project);
+            await transformationsEnabler.AddMissingTransforms();
+        }
+
+#endregion
 
         private static bool IsSingleProjectItemSelection(out IVsHierarchy hierarchy, out uint itemid)
         {

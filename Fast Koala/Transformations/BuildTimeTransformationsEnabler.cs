@@ -40,9 +40,18 @@ namespace Wijits.FastKoala.Transformations
         {
             if (!CanEnableBuildTimeTransformations) return false;
 
+            var message = "Are you sure you want to enable build-time transformations?";
+            var title = "Enable build-time transformations? (Confirmation)";
+            if (ProjectIsWebType || ProjectLooksLikeClickOnce)
+            {
+                title = "Enable inline build-time transformations? (Confirmation)";
+                message = "This action will cause your " + (ProjectProperties.AppCfgType ?? GuessAppCfgType())
+                                    + ".config to be regenerated in your design-time environment every time you build. "
+                                    + "Are you sure you want to enable inline build-time transformations?";
+            }
             var dialogResult = MessageBox.Show(_ownerWindow,
-                "Are you sure you want to enable build-time transformations?",
-                "Enable build-time transformations? (Confirmation)", MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
+                message,
+                title, MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
             if (dialogResult == DialogResult.Cancel) return false;
 
             _logger.LogInfo("Enabling config transformations.");
@@ -54,23 +63,7 @@ namespace Wijits.FastKoala.Transformations
             var originalConfigFile = Project.GetConfigFile();
             if (string.IsNullOrEmpty(ProjectProperties.AppCfgType))
             {
-                Guid? projectKind = !string.IsNullOrEmpty(Project.Kind) ? Guid.Parse(Project.Kind) : (Guid?)null;
-                var webProjectTypes = new[]
-                    {
-                        ProjectTypes.WebSite,
-                        ProjectTypes.AspNetMvc10,
-                        ProjectTypes.AspNetMvc20,
-                        ProjectTypes.AspNetMvc30,
-                        ProjectTypes.AspNetMvc40,
-                        ProjectTypes.WebApplication
-                    };
-                var projectTypes = Project.GetProjectTypeGuids().Split(';').Select(Guid.Parse);
-                if (projectKind.HasValue && (webProjectTypes.Contains(projectKind.Value) ||
-                    projectTypes.Any(t => webProjectTypes.Contains(t))))
-                {
-                    ProjectProperties.AppCfgType = "Web";
-                }
-                else ProjectProperties.AppCfgType = "App";
+                ProjectProperties.AppCfgType = ProjectIsWebType ? "Web" : "App";
             }
             if (string.IsNullOrEmpty(originalConfigFile))
             {
@@ -125,6 +118,11 @@ namespace Wijits.FastKoala.Transformations
             await Project.SaveProjectRoot();
 
             return true;
+        }
+
+        private string GuessAppCfgType()
+        {
+            return ProjectIsWebType ? "Web" : "App";
         }
 
         private void EnsureTransformXmlTarget()
@@ -212,23 +210,69 @@ namespace Wijits.FastKoala.Transformations
                 await _io.AddIfProjectIsSourceControlled(Project, baseConfigFile);
                 AddItemToProject(baseConfigFile);
             }
+            await AddMissingTransforms(baseConfigFile);
+
+            return true;
+        }
+
+        /// <remarks>Menu item entry point</remarks>
+        public async Task AddMissingTransforms()
+        {
+            if (!Project.Saved) Project.Save();
+            var baseConfigFile = GetBaseConfigPath();
+            if (baseConfigFile == null) return;
+            await AddMissingTransforms(baseConfigFile);
+            await Project.SaveProjectRoot();
+        }
+
+        private string GetBaseConfigPath()
+        {
+            var baseConfigPath = Project.GetConfigFile();
+            if (ProjectProperties.InlineTransformations == true)
+            {
+                baseConfigPath = Path.Combine(Project.GetDirectory(), ProjectProperties.ConfigDir,
+                    ProjectProperties.AppCfgType + "." + ProjectProperties.CfgBaseName + ".config");
+                if (!File.Exists(baseConfigPath))
+                {
+                    return null;
+                }
+            }
+            return baseConfigPath;
+        }
+
+        private async Task AddMissingTransforms(string baseConfigFile)
+        {
+            var appcfgtype = ProjectProperties.AppCfgType;
+            var baseFileInfo = new FileInfo(baseConfigFile);
+            var cfgfilename = baseFileInfo.Name;
             foreach (var cfg in Project.ConfigurationManager.Cast<Configuration>().ToList())
             {
                 var cfgname = cfg.ConfigurationName;
                 var xfrmname = appcfgtype + "." + cfgname + ".config";
-                var xfrmpath = xfrmname;
+                var xfrmpath =
+                    Path.Combine(FileUtilities.GetRelativePath(Project.GetDirectory(), baseFileInfo.DirectoryName),
+                        xfrmname);
+                if (xfrmpath.StartsWith(".\\")) xfrmpath = xfrmpath.Substring(2);
                 var xfrmfullpath = Path.Combine(Project.GetDirectory(), xfrmpath);
-                if (!File.Exists(xfrmpath))
+                if (!File.Exists(xfrmfullpath))
                 {
-                    _logger.LogInfo("Creating " + xfrmname);
-                    WriteFromManifest(@"Transforms\Web.{0}.config", cfgname, "Release", xfrmpath);
-                    var item = AddItemToProject(xfrmpath);
-                    item.AddMetadata("DependentUpon", cfgfilename);
-                    await _io.AddIfProjectIsSourceControlled(Project, cfgfilename);
+                    _logger.LogInfo("Creating " + xfrmpath);
+                    WriteFromManifest(@"Transforms\Web.{0}.config", cfgname, "Release", xfrmfullpath);
+                    await _io.AddIfProjectIsSourceControlled(Project, xfrmfullpath);
+                }
+                var projectItem = Project.GetProjectRoot().Items.SingleOrDefault(item => item.Include == xfrmpath)
+                                  ?? AddItemToProject(xfrmpath);
+                // ReSharper disable once SimplifyLinqExpression
+                if (!projectItem.HasMetadata ||
+                    !projectItem.Metadata.Any(m => m.Name == "DependentUpon"))
+                {
+                    projectItem.AddMetadata("DependentUpon", cfgfilename);
+                }
+                else if (projectItem.Metadata.Single(m => m.Name == "DependentUpon").Value != cfgfilename)
+                {
+                    projectItem.Metadata.Single(m => m.Name == "DependentUpon").Value = cfgfilename;
                 }
             }
-
-            return true;
         }
 
         private void WriteFromManifest(string resourceName, string resourcePlaceholderValue,
@@ -458,5 +502,57 @@ namespace Wijits.FastKoala.Transformations
         }
 
         public ProjectProperties ProjectProperties { get; set; }
+
+        public bool ProjectIsWebType
+        {
+            get
+            {
+                Guid? projectKind = !string.IsNullOrEmpty(Project.Kind) ? Guid.Parse(Project.Kind) : (Guid?)null;
+                var webProjectTypes = new[]
+                    {
+                        ProjectTypes.WebSite,
+                        ProjectTypes.AspNetMvc10,
+                        ProjectTypes.AspNetMvc20,
+                        ProjectTypes.AspNetMvc30,
+                        ProjectTypes.AspNetMvc40,
+                        ProjectTypes.WebApplication
+                    };
+                var projectTypes = Project.GetProjectTypeGuids().Split(';').Select(Guid.Parse);
+                return projectKind.HasValue && (webProjectTypes.Contains(projectKind.Value) ||
+                                                projectTypes.Any(t => webProjectTypes.Contains(t)));
+            }
+        }
+
+        public bool ProjectLooksLikeClickOnce
+        {
+            get { return !string.IsNullOrEmpty(ProjectProperties.GetPropertyValue("IsWebBootstrapper")); }
+        }
+
+        public bool HasMissingTransforms
+        {
+            get
+            {
+                if (!HasBuildTimeTransformationsEnabled) return false;
+                var baseConfigPath = this.GetBaseConfigPath();
+                var baseConfigInfo = new FileInfo(baseConfigPath);
+                var configDir = baseConfigInfo.DirectoryName;
+                foreach (var cfg in Project.ConfigurationManager.Cast<Configuration>().ToList())
+                {
+                    var cfgname = cfg.ConfigurationName;
+                    var cfgfile = Path.Combine(configDir, ProjectProperties.AppCfgType ?? GuessAppCfgType()
+                        + (ProjectProperties.InlineTransformations == true ? ProjectProperties.CfgBaseName : "")
+                        + "." + cfgname
+                        + ".config");
+                    if (!File.Exists(cfgfile)) return true;
+                    var relativePath = FileUtilities.GetRelativePath(Project.GetDirectory(), cfgfile);
+                    if (relativePath.StartsWith(".\\")) relativePath = relativePath.Substring(2);
+                    if (Project.GetProjectRoot().Items.SingleOrDefault(item => item.Include == relativePath) == null)
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
     }
 }
