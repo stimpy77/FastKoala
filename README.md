@@ -19,11 +19,11 @@ Initial commit also supports basic class libraries (which can have config files)
 
 In all cases, to use, right-click on the project node or the [Web|App].config in Solution Explorer and choose "Enable build-time transformations". 
 
+If a transform file (i.e. Web.Debug.config) has been deleted or removed, right-click on the base config file and choose "Add missing transforms".
+
 ####Setting the config directory####
 
 For web apps, which use inline transformations and nested folders, the default folder name is "App_Config", but you can choose any name you like when prompted--you must keep that folder name forever--and you can use backslashes in the folder name to deeply nest the config files, i.e. "cfg\server". To leave the base config and its transforms in the project root, use simply a dot ("."). You can also share configs further up in the solution using "..", i.e. "..\CommonConfigs\Web".
-
-If a transform file (i.e. Web.Debug.config) has been deleted or removed, right-click on the base config file and choose "Add missing transforms".
 
 ####Limitations####
 
