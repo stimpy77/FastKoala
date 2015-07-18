@@ -1,6 +1,10 @@
 # Fast Koala
 Enables build-time config transforms for various project types including web apps (but not web sites, and Azure is not supported at this time), with future plans to also ease config name management and add MSBuild scripts (Imports directives to custom .targets files) to a project.
 
+###"Build-time" means F5###
+
+All references to "build-time" refer to F6 (Build) or F5 ([Build and] Debug). This means that you can finally test web apps with different configuration transformations applied *without* publishing, you can simply select the configuration and hit F5.
+
 ###Inline Build-Time Transformations###
 This tool enables build-time transformations for tested web apps (not websites).
 
