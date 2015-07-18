@@ -6,7 +6,7 @@
     <Description xml:space="preserve">Enables config file transformations at build-time for common project types including web apps (not web sites). </Description>
     <MoreInfo>https://github.com/stimpy77/FastKoala</MoreInfo>
     <License>LICENSE.txt</License>
-    <Icon>Package.ico</Icon>
+    <Icon>Resources\Package.ico</Icon>
     <PreviewImage>preview1.png</PreviewImage>
   </Metadata>
   <Installation InstalledByMsi="false">
