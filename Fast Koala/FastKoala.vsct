@@ -76,16 +76,6 @@
         </Strings>
       </Button>
 
-      <Button guid="guidFastKoalaProjItemMenuCmdSet" id="cmdidAddMissingTransformsProjItem" priority="0x0100" type="Button">
-        <Parent guid="guidFastKoalaProjItemMenuCmdSet" id="FastKoalaProjItemMenu" />
-        <Icon guid="guidImages" id="bmpPic1" />
-        <CommandFlag>DefaultInvisible</CommandFlag>
-        <CommandFlag>DynamicVisibility</CommandFlag>
-        <Strings>
-          <ButtonText>Add missing transforms</ButtonText>
-        </Strings>
-      </Button>
-
 
       <Button guid="guidFastKoalaProjMenuCmdSet" id="cmdidEnableBuildTimeTransformationsProj" priority="0x0100" type="Button">
         <Parent guid="guidFastKoalaProjMenuCmdSet" id="FastKoalaProjMenu" />
@@ -94,6 +84,16 @@
         <CommandFlag>DynamicVisibility</CommandFlag>
         <Strings>
           <ButtonText>Enable build-time transformations</ButtonText>
+        </Strings>
+      </Button>
+
+      <Button guid="guidFastKoalaProjItemMenuCmdSet" id="cmdidAddMissingTransformsProjItem" priority="0x0100" type="Button">
+        <Parent guid="guidFastKoalaProjItemMenuCmdSet" id="FastKoalaProjItemMenu" />
+        <Icon guid="guidImages" id="bmpPic2" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Strings>
+          <ButtonText>Add missing transforms</ButtonText>
         </Strings>
       </Button>
 
