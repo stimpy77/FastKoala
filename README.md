@@ -1,7 +1,8 @@
 # Fast Koala
 Enables build-time config transforms for various project types including web apps (but not web sites, and Azure is not supported at this time), with future plans to also ease config name management and add MSBuild scripts (Imports directives to custom .targets files) to a project.
 
-Current status: Initial commit performs basic functionality for empty web apps (not sites) that need build-time transformations.
+###Inline Build-Time Transformations###
+This tool enables build-time transformations for tested web apps (not websites).
 
     Web.config
     Web.Debug.config
@@ -15,8 +16,10 @@ Current status: Initial commit performs basic functionality for empty web apps (
   
 and Web.config at project root becomes transient (and should never be added to source control).
 
-Initial commit also supports basic class libraries (which can have config files) and Windows apps (other than ClickOnce apps) that need to transform out to the bin\Debug or bin\Release directory as AssemblyName.exe.config.
+###Bin-Targeted Build-Time Transformations###
+This tool also supports enabling build-time transformations for class library projects (which can have config files) and for Windows apps (other than ClickOnce apps) that need to transform out to the bin\Debug or bin\Release directory as AssemblyName.exe.config.
 
+###How to use###
 In all cases, to use, right-click on the project node or the [Web|App].config in Solution Explorer and choose "Enable build-time transformations". 
 
 If a transform file (i.e. Web.Debug.config) has been deleted or removed, right-click on the base config file and choose "Add missing transforms".
@@ -25,7 +28,7 @@ If a transform file (i.e. Web.Debug.config) has been deleted or removed, right-c
 
 For web apps, which use inline transformations and nested folders, the default folder name is "App_Config", but you can choose any name you like when prompted--you must keep that folder name forever--and you can use backslashes in the folder name to deeply nest the config files, i.e. "cfg\server". To leave the base config and its transforms in the project root, use simply a dot ("."). You can also share configs further up in the solution using "..", i.e. "..\CommonConfigs\Web".
 
-####Limitations####
+###Limitations###
 
 Web sites are not supported and will never be supported.
 
