@@ -73,10 +73,8 @@ namespace Wijits.FastKoala.Transformations
             
             // 2. determine if need to use inline transformations or bin transformations
             //  >> if web or clickonce, inline is mandatory
-            var inlineTransformations = ProjectProperties.InlineTransformations ?? originalConfigFileName.ToLower() == "web.config" ? true : false;
-            if (!inlineTransformations && !string.IsNullOrEmpty(ProjectProperties.GetPropertyValue("PublishUrl")))
-                inlineTransformations = true;
-            ProjectProperties.InlineTransformations = inlineTransformations;
+            var inlineTransformations = ProjectProperties.InlineTransformations
+                ?? (ProjectProperties.InlineTransformations = (ProjectIsWebType || ProjectLooksLikeClickOnce)).Value;
 
             bool prepresult;
 
@@ -329,9 +327,9 @@ namespace Wijits.FastKoala.Transformations
                     {
                         _logger.LogInfo("Creating " + xfrmname);
                         WriteFromManifest(@"Transforms\Web.{0}.config", cfgname, "Release", xfrmpath);
+                        await _io.AddIfProjectIsSourceControlled(Project, xfrmFullPath);
                         var item = AddItemToProject(xfrmpath);
                         item.AddMetadata("DependentUpon", baseConfigFile);
-                        await _io.AddIfProjectIsSourceControlled(Project, xfrmFullPath);
                     }
                 }
             }
@@ -388,12 +386,12 @@ namespace Wijits.FastKoala.Transformations
                     {
                         _logger.LogInfo("Creating " + xfrmpath);
                         WriteFromManifest(@"Transforms\Web.{0}.config", cfgname, "Release", xfrmpath);
+                        await _io.AddIfProjectIsSourceControlled(Project, xfrmFullPath);
                         if (!replaceXfrm)
                         {
                             var item = AddItemToProject(xfrmpath);
                             item.AddMetadata("DependentUpon", newBaseConfigFile);
                         }
-                        await _io.AddIfProjectIsSourceControlled(Project, xfrmFullPath);
                     }
 
                     // and update the proejct manifest reference to the file
