@@ -17,7 +17,7 @@ This tool enables build-time transformations for tested web apps (not websites).
 and Web.config at project root becomes transient (and should never be added to source control).
 
 ###Bin-Targeted Build-Time Transformations###
-This tool also supports enabling build-time transformations for class library projects (which can have config files) and for Windows apps (other than ClickOnce apps) that need to transform out to the bin\Debug or bin\Release directory as AssemblyName.exe.config.
+This tool also supports enabling build-time transformations for class library projects (which can have config files) and for Windows apps (other than ClickOnce apps -- support for ClickOnce is coming but will use Inline Transformations) that need to transform out to the bin\Debug or bin\Release directory as AssemblyName.exe.config.
 
 ###How to use###
 In all cases, to use, right-click on the project node or the [Web|App].config in Solution Explorer and choose "Enable build-time transformations". 
