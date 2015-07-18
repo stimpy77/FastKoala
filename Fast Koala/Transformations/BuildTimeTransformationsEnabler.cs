@@ -537,8 +537,7 @@ namespace Wijits.FastKoala.Transformations
                 foreach (var cfg in Project.ConfigurationManager.Cast<Configuration>().ToList())
                 {
                     var cfgname = cfg.ConfigurationName;
-                    var cfgfile = Path.Combine(configDir, ProjectProperties.AppCfgType ?? GuessAppCfgType()
-                        + (ProjectProperties.InlineTransformations == true ? ProjectProperties.CfgBaseName : "")
+                    var cfgfile = Path.Combine(configDir, (ProjectProperties.AppCfgType ?? GuessAppCfgType())
                         + "." + cfgname
                         + ".config");
                     if (!File.Exists(cfgfile)) return true;
