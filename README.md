@@ -36,7 +36,7 @@ For web apps, which use inline transformations in a nested folder, the default f
 
 Web sites are not supported and will never be supported.
 
-Visual Studio 2015 and ASP.NET 5 are not yet supported and the latter might not ever be supported.
+ASP.NET 5 is not supported; it might not ever be supported.
 
 ### How it works ###
 
