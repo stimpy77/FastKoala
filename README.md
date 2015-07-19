@@ -20,6 +20,8 @@ This tool enables build-time transformations for web apps (not websites).
   
 and Web.config at project root becomes transient (and should never be added to source control).
 
+<sub><sup>(This was a feature I and many others always wanted from Slow Cheetah.)</sup></sub>
+
 ###Bin-Targeted Build-Time Transformations###
 This tool also supports enabling build-time transformations for class library projects (which can have config files) and for Windows apps (other than ClickOnce apps -- support for ClickOnce is coming but will use Inline Transformations) that need to transform out to the bin\Debug or bin\Release directory as AssemblyName.exe.config.
 
@@ -36,7 +38,7 @@ For web apps, which use inline transformations in a nested folder, the default f
 
 Web sites are not supported and will never be supported.
 
-Visual Studio 2015 and ASP.NET 5 are not yet supported and the latter might not ever be supported.
+ASP.NET 5 is not supported; it might not ever be supported.
 
 ### How it works ###
 
