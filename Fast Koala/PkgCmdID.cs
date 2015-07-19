@@ -1,9 +1,10 @@
 ﻿// PkgCmdID.cs
 // MUST match PkgCmdID.h
-using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Wijits.FastKoala
 {
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
     static class PkgCmdIDList
     {
         public const uint cmdidEnableBuildTimeTransformationsProjItem = 0x100;

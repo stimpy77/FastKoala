@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -7,8 +8,10 @@ namespace Wijits.FastKoala.Utilities
 {
     public class FileUtilities
     {
+        // ReSharper disable InconsistentNaming
         private const int FILE_ATTRIBUTE_DIRECTORY = 0x10;
         private const int FILE_ATTRIBUTE_NORMAL = 0x80;
+        // ReSharper enable InconsistentNaming
 
         public static string GetRelativePath(string fromPath, string toPath)
         {
@@ -62,6 +65,8 @@ namespace Wijits.FastKoala.Utilities
                 return Path.GetFullPath(fileName);
 
             var values = Environment.GetEnvironmentVariable("PATH");
+            Debug.Assert(values != null, "values != null");
+            // ReSharper disable once LoopCanBeConvertedToQuery
             foreach (var path in values.Split(';'))
             {
                 var fullPath = Path.Combine(path, fileName);

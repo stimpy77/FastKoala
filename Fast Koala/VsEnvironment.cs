@@ -1,19 +1,17 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using EnvDTE;
-using EnvDTE80;
-using Wijits.FastKoala.Utilities;
-using Thread = System.Threading.Thread;
-using System.Threading.Tasks;
 using Wijits.FastKoala.Logging;
+using Thread = System.Threading.Thread;
 
 namespace Wijits.FastKoala
 {
     public static class VsEnvironment
     {
-        private static IServiceProvider _serviceProvider;
-
         public static IWin32Window OwnerWindow
         {
             get { return NativeWindow.FromHandle(new IntPtr(Dte.MainWindow.HWnd)); }
@@ -24,24 +22,46 @@ namespace Wijits.FastKoala
             get { return GetService<DTE>(); }
         }
 
+        public static IServiceProvider ServiceProvider { get; private set; }
+
         public static void Initialize(IServiceProvider serviceProvider)
         {
-            _serviceProvider = serviceProvider;
+            ServiceProvider = serviceProvider;
         }
 
         public static T GetService<T>()
         {
-            return (T) _serviceProvider.GetService(typeof (T));
+            return (T) ServiceProvider.GetService(typeof (T));
         }
 
         public static object GetService(this DTE dte, Type type)
         {
-            return _serviceProvider.GetService(type);
+            return ServiceProvider.GetService(type);
+        }
+
+        // source: http://www.mztools.com/articles/2007/mz2007016.aspx
+        // supports GetProjectTypeGuids above
+        public static object GetService(this DTE serviceProviderObject, Guid guid)
+        {
+            object service = null;
+            IntPtr serviceIntPtr;
+            var sidGuid = guid;
+            var iidGuid = sidGuid;
+            // ReSharper disable once SuspiciousTypeConversion.Global
+            var serviceProvider = (Microsoft.VisualStudio.OLE.Interop.IServiceProvider) serviceProviderObject;
+            var hr = serviceProvider.QueryService(ref sidGuid, ref iidGuid, out serviceIntPtr);
+            if (hr != 0) Marshal.ThrowExceptionForHR(hr);
+            else if (!serviceIntPtr.Equals(IntPtr.Zero))
+            {
+                service = Marshal.GetObjectForIUnknown(serviceIntPtr);
+                Marshal.Release(serviceIntPtr);
+            }
+            return service;
         }
 
         public static T GetService<T>(this DTE dte)
         {
-            var ret = _serviceProvider.GetService(typeof (T));
+            var ret = ServiceProvider.GetService(typeof (T));
             try
             {
                 return (T) ret;
@@ -56,7 +76,6 @@ namespace Wijits.FastKoala
         {
             return new DteLogger(dte);
         }
-
 
         public static Project GetProjectByName(this DTE dte, string projectName)
         {
@@ -75,10 +94,10 @@ namespace Wijits.FastKoala
             SelectProject(dte, project);
             try
             {
-                dte.ExecuteCommand("Project.UnloadProject", "");
-                System.Threading.Thread.Sleep(200);
-                dte.ExecuteCommand("Project.ReloadProject", "");
-                System.Threading.Thread.Sleep(200);
+                dte.ExecuteCommand("Project.UnloadProject");
+                Thread.Sleep(200);
+                dte.ExecuteCommand("Project.ReloadProject");
+                Thread.Sleep(200);
                 return GetProjectByName(dte, projectName);
             }
             catch
@@ -86,9 +105,9 @@ namespace Wijits.FastKoala
                 try
                 {
                     SleepAndCycleMessagePump(dte);
-                    dte.ExecuteCommand("Project.UnloadProject", "");
+                    dte.ExecuteCommand("Project.UnloadProject");
                     SleepAndCycleMessagePump(dte);
-                    dte.ExecuteCommand("Project.ReloadProject", "");
+                    dte.ExecuteCommand("Project.ReloadProject");
                     SleepAndCycleMessagePump(dte);
                     return GetProjectByUniqueName(dte, projectUniqueName)
                            ?? GetProjectByName(dte, projectName);
@@ -102,21 +121,21 @@ namespace Wijits.FastKoala
 
         public static void UnloadProject(this DTE dte, Project project)
         {
-
             SelectProject(dte, project);
-            dte.ExecuteCommand("Project.UnloadProject", "");
+            dte.ExecuteCommand("Project.UnloadProject");
         }
 
         public static void ReloadJustUnloadedProject(this DTE dte)
         {
-            dte.ExecuteCommand("Project.ReloadProject", "");
+            dte.ExecuteCommand("Project.ReloadProject");
         }
 
-        private static void SleepAndCycleMessagePump(this DTE dte, int sleepMS = 250)
+        // ReSharper disable once UnusedParameter.Local
+        private static void SleepAndCycleMessagePump(this DTE dte, int sleepMs = 250)
         {
-            Thread.Sleep(sleepMS/2);
+            Thread.Sleep(sleepMs/2);
             Application.DoEvents();
-            Thread.Sleep(sleepMS/2);
+            Thread.Sleep(sleepMs/2);
         }
 
         public static Project ReloadProject(this DTE dte, string projectName)
@@ -133,25 +152,28 @@ namespace Wijits.FastKoala
             var solutionExplorer = dte.Windows.Item(Constants.vsWindowKindSolutionExplorer);
             solutionExplorer.Activate();
             var solutionHierarchy = solutionExplorer.Object as UIHierarchy;
-            var dte2 = dte as DTE2;
-            var se = dte2.ToolWindows.SolutionExplorer;
-            var proj = findUIHierarchyItem(solutionHierarchy.UIHierarchyItems, project);
-            try { proj.Select(vsUISelectionType.vsUISelectionTypeSelect);}
-            catch { }
+            Debug.Assert(solutionHierarchy != null, "solutionHierarchy != null");
+            var proj = FindUiHierarchyItem(solutionHierarchy.UIHierarchyItems, project);
+            try
+            {
+                proj.Select(vsUISelectionType.vsUISelectionTypeSelect);
+            }
+            catch
+            {
+                // ignored
+            }
         }
 
-        public static UIHierarchyItem findUIHierarchyItem(UIHierarchyItems items, Project item)
+        public static UIHierarchyItem FindUiHierarchyItem(UIHierarchyItems items, Project item)
         {
             foreach (UIHierarchyItem child in items)
             {
                 if (child.Object == item) return child;
-                var result = findUIHierarchyItem(child.UIHierarchyItems, item);
+                var result = FindUiHierarchyItem(child.UIHierarchyItems, item);
                 if (result != null) return result;
             }
             return null;
         }
-
-
 
         public static Project ReloadSolutionAndReturnProject(this DTE dte, Project project)
         {
@@ -185,7 +207,7 @@ namespace Wijits.FastKoala
             return Dte.Solution.Cast<Project>().Count(p => p.Name == projectName) == 1;
         }
 
-        public static async Task CheckOutFileForEditIfSourceControlled(this EnvDTE.DTE dte, string filename)
+        public static async Task CheckOutFileForEditIfSourceControlled(this DTE dte, string filename)
         {
             await Task.Run(() =>
             {
@@ -194,11 +216,6 @@ namespace Wijits.FastKoala
                     dte.SourceControl.CheckOutItem(filename);
                 }
             });
-        }
-
-        public static IServiceProvider ServiceProvider
-        {
-            get { return _serviceProvider; }
         }
     }
 }

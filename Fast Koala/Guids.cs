@@ -1,9 +1,11 @@
 ﻿// Guids.cs
 // MUST match guids.h
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Wijits.FastKoala
 {
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
     static class GuidList
     {
         public const string guidFastKoalaPkgString = "5a540277-c820-4fb4-9cb5-f878fc9af04e";

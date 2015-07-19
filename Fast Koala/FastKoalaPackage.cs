@@ -87,26 +87,6 @@ namespace Wijits.FastKoala
             mcs.AddCommand(addMissingTransformationsMenuItem);
         }
 
-        private async void EnableBuildTimeTransformationsMenuItemProject_BeforeQueryStatus(object sender, EventArgs e)
-        {
-            // get the menu that fired the event
-            var menuCommand = sender as OleMenuCommand;
-            if (menuCommand == null) return;
-
-            menuCommand.Visible = false;
-            menuCommand.Enabled = false;
-
-            var project = GetSelectedProject();
-
-            var transformationsEnabler = await GetTransformationsEnabler(project);
-            if (!transformationsEnabler.CanEnableBuildTimeTransformations)
-                return;
-
-            menuCommand.Visible = true;
-            menuCommand.Enabled = true;
-        }
-
-
         private async Task<BuildTimeTransformationsEnabler> GetTransformationsEnabler(EnvDTE.Project project)
         {
             var logger = Dte.GetLogger();
@@ -147,6 +127,13 @@ namespace Wijits.FastKoala
         #endregion
 
 #region EnableBuildTimeTransformations
+
+        /// <summary>
+        /// User should've right-clicked on a .config file; determine whether to show 
+        /// "Enable build-time transformations" menu item
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private async void EnableBuildTimeTransformationsMenuItem_BeforeQueryStatus(object sender, EventArgs e)
         {
             // get the menu that fired the event
@@ -183,29 +170,37 @@ namespace Wijits.FastKoala
         }
 
         /// <summary>
+        /// User right-clicked on a project; determine whether to show "Enable build-time transformations" menu item
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private async void EnableBuildTimeTransformationsMenuItemProject_BeforeQueryStatus(object sender, EventArgs e)
+        {
+            // get the menu that fired the event
+            var menuCommand = sender as OleMenuCommand;
+            if (menuCommand == null) return;
+
+            menuCommand.Visible = false;
+            menuCommand.Enabled = false;
+
+            var project = GetSelectedProject();
+
+            var transformationsEnabler = await GetTransformationsEnabler(project);
+            if (!transformationsEnabler.CanEnableBuildTimeTransformations)
+                return;
+
+            menuCommand.Visible = true;
+            menuCommand.Enabled = true;
+        }
+
+
+        /// <summary>
         ///     This function is the callback used to execute a command when the a menu item is clicked.
         ///     See the Initialize method to see how the menu item is associated to this function using
         ///     the OleMenuCommandService service and the MenuCommand class.
         /// </summary>
         private async void EnableBuildTimeTransformationsMenuItem_Invoke(object sender, EventArgs e)
         {
-            //// Show a Message Box to prove we were here
-            //var uiShell = (IVsUIShell)GetService(typeof(SVsUIShell));
-            //var clsid = Guid.Empty;
-            //int result;
-            //ErrorHandler.ThrowOnFailure(uiShell.ShowMessageBox(
-            //    0,
-            //    ref clsid,
-            //    "Fast Koala",
-            //    string.Format(CultureInfo.CurrentCulture, "Inside {0}.MenuItemCallback()", ToString()),
-            //    string.Empty,
-            //    0,
-            //    OLEMSGBUTTON.OLEMSGBUTTON_OK,
-            //    OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST,
-            //    OLEMSGICON.OLEMSGICON_INFO,
-            //    0, // false
-            //    out result));
-
             var project = GetSelectedProject();
             var transformationsEnabler = await GetTransformationsEnabler(project);
             await transformationsEnabler.EnableBuildTimeConfigTransformations();
@@ -213,7 +208,7 @@ namespace Wijits.FastKoala
 
 #endregion
 
-        #region AddMissingTransformations
+#region AddMissingTransformations
 
         private async void AddMissingTransformationsMenuItem_BeforeQueryStatus(object sender, EventArgs e)
         {
@@ -259,6 +254,7 @@ namespace Wijits.FastKoala
 
 #endregion
 
+        // source: http://www.diaryofaninja.com/blog/2014/02/18/who-said-building-visual-studio-extensions-was-hard
         private static bool IsSingleProjectItemSelection(out IVsHierarchy hierarchy, out uint itemid)
         {
             hierarchy = null;

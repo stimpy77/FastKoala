@@ -1,32 +1,29 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
 using EnvDTE;
 using Microsoft.Build.Construction;
-using Microsoft.Build.Evaluation;
 using Wijits.FastKoala.Logging;
 using Wijits.FastKoala.SourceControl;
 using Wijits.FastKoala.Utilities;
-using ProjectItem = EnvDTE.ProjectItem;
 
 namespace Wijits.FastKoala.Transformations
 {
     public class BuildTimeTransformationsEnabler
     {
-        private readonly EnvDTE.DTE _dte;
+        private readonly DTE _dte;
+        private readonly ISccBasicFileSystem _io;
+        private readonly ILogger _logger;
+        private readonly IWin32Window _ownerWindow;
         private string _projectName;
         private string _projectUniqueName;
-        private readonly ILogger _logger;
-        private ISccBasicFileSystem _io;
-        private IWin32Window _ownerWindow;
 
-        public BuildTimeTransformationsEnabler(EnvDTE.Project project, ILogger logger, ISccBasicFileSystem io, IWin32Window ownerWindow)
+        public BuildTimeTransformationsEnabler(Project project, ILogger logger, ISccBasicFileSystem io,
+            IWin32Window ownerWindow)
         {
             _dte = project.DTE;
             Project = project;
@@ -46,8 +43,8 @@ namespace Wijits.FastKoala.Transformations
             {
                 title = "Enable inline build-time transformations? (Confirmation)";
                 message = "This action will cause your " + (ProjectProperties.AppCfgType ?? GuessAppCfgType())
-                                    + ".config to be regenerated in your design-time environment every time you build. "
-                                    + "Are you sure you want to enable inline build-time transformations?";
+                          + ".config to be regenerated in your design-time environment every time you build. "
+                          + "Are you sure you want to enable inline build-time transformations?";
             }
             var dialogResult = MessageBox.Show(_ownerWindow,
                 message,
@@ -60,21 +57,17 @@ namespace Wijits.FastKoala.Transformations
             if (!Project.Saved) Project.Save();
 
             // 1. determine if web.config vs app.config
-            var originalConfigFile = Project.GetConfigFile();
             if (string.IsNullOrEmpty(ProjectProperties.AppCfgType))
             {
                 ProjectProperties.AppCfgType = ProjectIsWebType ? "Web" : "App";
             }
-            if (string.IsNullOrEmpty(originalConfigFile))
-            {
-                originalConfigFile = Path.Combine(Project.GetDirectory(), ProjectProperties.AppCfgType + ".config");
-            }
-            var originalConfigFileName = new FileInfo(originalConfigFile).Name;
-            
+
             // 2. determine if need to use inline transformations or bin transformations
             //  >> if web or clickonce, inline is mandatory
             var inlineTransformations = ProjectProperties.InlineTransformations
-                ?? (ProjectProperties.InlineTransformations = (ProjectIsWebType || ProjectLooksLikeClickOnce)).Value;
+                                        ??
+                                        (ProjectProperties.InlineTransformations =
+                                            (ProjectIsWebType || ProjectLooksLikeClickOnce)).Value;
 
             bool prepresult;
 
@@ -111,7 +104,6 @@ namespace Wijits.FastKoala.Transformations
             // >> 7) ensure that the target gets invoked (either with Before/AfterBuild or DefaultTargets)
 
 
-
             // 8. save changes and reload project
             await Project.SaveProjectRoot();
 
@@ -127,33 +119,33 @@ namespace Wijits.FastKoala.Transformations
         {
             var projectRoot = Project.GetProjectRoot();
             // ReSharper disable once SimplifyLinqExpression
-            if (!projectRoot.Targets.Any(t => t.Name == "TransformOnBuild"))
-            {
-                var transformOnBuildTarget = projectRoot.AddTarget("TransformOnBuild");
-                transformOnBuildTarget.BeforeTargets = "Build";
-                var propertyGroup = transformOnBuildTarget.AddPropertyGroup();
-                var outputTypeExtension_exe = propertyGroup.AddProperty("outputTypeExtension", "exe");
-                outputTypeExtension_exe.Condition = "'$(OutputType)' == 'exe' or '$(OutputType)' == 'winexe'";
-                var outputTypeExtension_dll = propertyGroup.AddProperty("outputTypeExtension", "dll");
-                outputTypeExtension_dll.Condition = "'$(OutputType)' == 'Library'";
+            if (projectRoot.Targets.Any(t => t.Name == "TransformOnBuild")) return;
 
-                var trWeb = transformOnBuildTarget.AddTask("TransformXml");
-                trWeb.Condition = "'$(AppCfgType)' == 'Web'";
-                trWeb.SetParameter("Source", @"$(ConfigDir)\Web.Base.config");
-                trWeb.SetParameter("Transform", @"$(ConfigDir)\Web.$(Configuration).config");
-                trWeb.SetParameter("Destination", @"Web.config");
-                var trClickOnce = transformOnBuildTarget.AddTask("TransformXml");
-                trClickOnce.Condition = "'$(AppCfgType)' == 'App' and $(InlineTransformations) == true";
-                trClickOnce.SetParameter("Source", @"$(ConfigDir)\App.Base.config");
-                trClickOnce.SetParameter("Transform", @"$(ConfigDir)\App.$(Configuration).config");
-                trClickOnce.SetParameter("Destination", @"App.config");
-                var trBinOut = transformOnBuildTarget.AddTask("TransformXml");
-                trBinOut.Condition = "'$(AppCfgType)' == 'App' and $(InlineTransformations) != true";
-                trBinOut.SetParameter("Source", @"App.config");
-                trBinOut.SetParameter("Transform", @"App.$(Configuration).config");
-                trBinOut.SetParameter("Destination", @"$(OutDir)$(AssemblyName).$(outputTypeExtension).config");
-            }
-            
+            var transformOnBuildTarget = projectRoot.AddTarget("TransformOnBuild");
+            transformOnBuildTarget.BeforeTargets = "Build";
+            var propertyGroup = transformOnBuildTarget.AddPropertyGroup();
+            // ReSharper disable InconsistentNaming
+            var outputTypeExtension_exe = propertyGroup.AddProperty("outputTypeExtension", "exe");
+            outputTypeExtension_exe.Condition = "'$(OutputType)' == 'exe' or '$(OutputType)' == 'winexe'";
+            var outputTypeExtension_dll = propertyGroup.AddProperty("outputTypeExtension", "dll");
+            outputTypeExtension_dll.Condition = "'$(OutputType)' == 'Library'";
+            // ReSharper enable InconsistentNaming
+
+            var trWeb = transformOnBuildTarget.AddTask("TransformXml");
+            trWeb.Condition = "'$(AppCfgType)' == 'Web'";
+            trWeb.SetParameter("Source", @"$(ConfigDir)\Web.Base.config");
+            trWeb.SetParameter("Transform", @"$(ConfigDir)\Web.$(Configuration).config");
+            trWeb.SetParameter("Destination", @"Web.config");
+            var trClickOnce = transformOnBuildTarget.AddTask("TransformXml");
+            trClickOnce.Condition = "'$(AppCfgType)' == 'App' and $(InlineTransformations) == true";
+            trClickOnce.SetParameter("Source", @"$(ConfigDir)\App.Base.config");
+            trClickOnce.SetParameter("Transform", @"$(ConfigDir)\App.$(Configuration).config");
+            trClickOnce.SetParameter("Destination", @"App.config");
+            var trBinOut = transformOnBuildTarget.AddTask("TransformXml");
+            trBinOut.Condition = "'$(AppCfgType)' == 'App' and $(InlineTransformations) != true";
+            trBinOut.SetParameter("Source", @"App.config");
+            trBinOut.SetParameter("Transform", @"App.$(Configuration).config");
+            trBinOut.SetParameter("Destination", @"$(OutDir)$(AssemblyName).$(outputTypeExtension).config");
         }
 
         private void EnsureTransformXmlTaskInProject()
@@ -166,13 +158,13 @@ namespace Wijits.FastKoala.Transformations
                         Condition="'$(VSToolsPath)' != ''" /> 
                  */
             }
-            else 
+            else
             {
                 /* non-web app:
                  *  <UsingTask TaskName="TransformXml"
                        AssemblyFile="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Web\Microsoft.Web.Publishing.Tasks.dll"/>
                  */
-                // ReSharper disable once SimplifyLinqExpression
+                // ReSharper disable SimplifyLinqExpression
                 var projectRoot = Project.GetProjectRoot();
                 if (!projectRoot.UsingTasks.Any(ut => ut.TaskName == "TransformXml"))
                 {
@@ -180,6 +172,7 @@ namespace Wijits.FastKoala.Transformations
                         @"$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Web\Microsoft.Web.Publishing.Tasks.dll",
                         null);
                 }
+                // ReSharper enable SimplifyLinqExpression
             }
         }
 
@@ -276,15 +269,19 @@ namespace Wijits.FastKoala.Transformations
         private void WriteFromManifest(string resourceName, string resourcePlaceholderValue,
             string resourcePlaceholderDefault, string targetPath)
         {
-            resourceName = typeof(FastKoalaPackage).Namespace + @".Resources." + resourceName.Replace("\\", ".");
+            resourceName = typeof (FastKoalaPackage).Namespace + @".Resources." + resourceName.Replace("\\", ".");
             var assembly = typeof (BuildTimeTransformationsEnabler).Assembly;
-            using (var stream = assembly.GetManifestResourceStream(string.Format(resourceName, resourcePlaceholderValue))
-                             ?? assembly.GetManifestResourceStream(string.Format(resourceName, resourcePlaceholderDefault)))
+            using (
+                var stream = assembly.GetManifestResourceStream(string.Format(resourceName, resourcePlaceholderValue))
+                             ??
+                             assembly.GetManifestResourceStream(string.Format(resourceName, resourcePlaceholderDefault))
+                )
             {
                 var parentDirectory = Directory.GetParent(targetPath).FullName;
                 if (!Directory.Exists(parentDirectory)) Directory.CreateDirectory(parentDirectory);
                 using (var fileStream = File.OpenWrite(targetPath))
                 {
+                    Debug.Assert(stream != null, "stream != null");
                     stream.CopyTo(fileStream);
                 }
             }
@@ -292,7 +289,6 @@ namespace Wijits.FastKoala.Transformations
 
         private async Task<bool> PrepEnableInlineBuildTimeConfigTransformations()
         {
-
             // 3. if inline transformations, determine config folder
             if (string.IsNullOrEmpty(ProjectProperties.ConfigDir))
             {
@@ -307,15 +303,14 @@ namespace Wijits.FastKoala.Transformations
             if (string.IsNullOrEmpty(baseConfig))
             {
                 // create the App/Web.config file
-                var cfgfilename = string.Format(@"{0}.config", ProjectProperties.AppCfgType);
-                var baseConfigFile = string.Format(@"{0}.{1}.config", ProjectProperties.AppCfgType, ProjectProperties.CfgBaseName);
+                var baseConfigFile = string.Format(@"{0}.{1}.config", ProjectProperties.AppCfgType,
+                    ProjectProperties.CfgBaseName);
                 var baseConfigPath = string.Format(@"{0}\{1}", ProjectProperties.ConfigDir, baseConfigFile);
                 baseConfigFullPath = Path.Combine(Project.GetDirectory(), baseConfigPath);
                 _logger.LogInfo("Creating " + baseConfigPath);
                 WriteFromManifest(@"Transforms\{0}.config", ProjectProperties.AppCfgType, "Web", baseConfigFullPath);
                 await _io.AddIfProjectIsSourceControlled(Project, baseConfigFullPath);
                 AddItemToProject(baseConfigPath);
-
 
                 foreach (var cfg in Project.ConfigurationManager.Cast<Configuration>().ToList())
                 {
@@ -338,7 +333,8 @@ namespace Wijits.FastKoala.Transformations
                 // move the App/Web.config file
                 var oldcfgfile = string.Format("{0}.config", ProjectProperties.AppCfgType);
                 var cfgfullpath = Path.Combine(Project.GetDirectory(), oldcfgfile);
-                var newBaseConfigFile = string.Format(@"{0}.{1}.config", ProjectProperties.AppCfgType, ProjectProperties.CfgBaseName);
+                var newBaseConfigFile = string.Format(@"{0}.{1}.config", ProjectProperties.AppCfgType,
+                    ProjectProperties.CfgBaseName);
                 var newBaseConfigPath = string.Format(@"{0}\{1}", ProjectProperties.ConfigDir, newBaseConfigFile);
                 var newBaseConfigFullPath = baseConfigFullPath = Path.Combine(Project.GetDirectory(), newBaseConfigPath);
                 _logger.LogInfo("Moving " + oldcfgfile + " to " + newBaseConfigPath);
@@ -347,7 +343,9 @@ namespace Wijits.FastKoala.Transformations
                 await _io.Move(cfgfullpath, newBaseConfigFullPath);
 
                 // and update the proejct manifest reference to the file
-                var configItem = Project.GetProjectRoot().Items.SingleOrDefault(item => item.Include.ToLower() == oldcfgfile.ToLower());
+                var configItem =
+                    Project.GetProjectRoot()
+                        .Items.SingleOrDefault(item => item.Include.ToLower() == oldcfgfile.ToLower());
                 if (configItem == null) AddItemToProject(newBaseConfigPath);
                 else configItem.Include = newBaseConfigPath;
                 AddItemToProject(oldcfgfile); // needs to be in the project manifest, but not in source control
@@ -368,8 +366,8 @@ namespace Wijits.FastKoala.Transformations
                         // if so, replace it
                         // if not, move it
                         var oldXfrmContent = File.ReadAllText(oldxfrmpath);
-                        var defaultXfrmContent = GetManifestResourceStreamContent(@"Transforms\" +
-                                                             (oldxfrmname.Replace(".config", ".Default.config")));
+                        var defaultXfrmContent = GetManifestResourceStreamContent(
+                            @"Transforms\" + (oldxfrmname.Replace(".config", ".Default.config")));
                         var isUnmodifiedDefault = oldXfrmContent == defaultXfrmContent;
                         if (isUnmodifiedDefault)
                         {
@@ -397,7 +395,8 @@ namespace Wijits.FastKoala.Transformations
                     // and update the proejct manifest reference to the file
                     var prjroot = Project.GetProjectRoot();
                     var xfrmitem = prjroot.Items.SingleOrDefault(item => item.Include.ToLower() == xfrmname.ToLower())
-                                ?? prjroot.Items.SingleOrDefault(item => item.Include.ToLower() == xfrmpath.ToLower());
+                                   ??
+                                   prjroot.Items.SingleOrDefault(item => item.Include.ToLower() == xfrmpath.ToLower());
                     if (xfrmitem == null) xfrmitem = AddItemToProject(xfrmpath);
                     else xfrmitem.Include = xfrmpath;
                     var metadata = xfrmitem.Metadata.SingleOrDefault(m => m.Name == "DependentUpon")
@@ -421,10 +420,11 @@ namespace Wijits.FastKoala.Transformations
 
         private string GetManifestResourceStreamContent(string resourceName)
         {
-            resourceName = typeof(FastKoalaPackage).Namespace + @".Resources." + resourceName.Replace("\\", ".");
-            var assembly = typeof(BuildTimeTransformationsEnabler).Assembly;
+            resourceName = typeof (FastKoalaPackage).Namespace + @".Resources." + resourceName.Replace("\\", ".");
+            var assembly = typeof (BuildTimeTransformationsEnabler).Assembly;
             using (var stream = assembly.GetManifestResourceStream(resourceName))
             {
+                Debug.Assert(stream != null, "stream != null");
                 using (var sr = new StreamReader(stream))
                 {
                     return sr.ReadToEnd();
@@ -437,12 +437,13 @@ namespace Wijits.FastKoala.Transformations
             var xml = new XmlDocument();
             xml.Load(baseConfigFullPath);
             var commentXml = string.Format(@"
-    !! WARNING !!
-    Do not modify the {0}.config file directly. Always edit the configurations in
-    - {1}\{0}.{2}.config
-    - {1}\{0}.[Debug|Release].config
-", ProjectProperties.AppCfgType, ProjectProperties.ConfigDir, ProjectProperties.CfgBaseName);
+                    !! WARNING !!
+                    Do not modify the {0}.config file directly. Always edit the configurations in
+                    - {1}\{0}.{2}.config
+                    - {1}\{0}.[Debug|Release].config
+                ", ProjectProperties.AppCfgType, ProjectProperties.ConfigDir, ProjectProperties.CfgBaseName);
             var commentXmlNode = xml.CreateComment(commentXml);
+            Debug.Assert(xml.DocumentElement != null, "xml.DocumentElement != null");
             if (xml.DocumentElement.ChildNodes.Count > 0)
                 xml.DocumentElement.InsertBefore(commentXmlNode, xml.DocumentElement.FirstChild);
             else xml.DocumentElement.AppendChild(commentXmlNode);
@@ -453,17 +454,17 @@ namespace Wijits.FastKoala.Transformations
         private ProjectItemElement AddItemToProject(string itemRelativePath)
         {
             var projectRoot = Project.GetProjectRoot();
-            var itemGroup = projectRoot.ItemGroups.LastOrDefault(ig => string.IsNullOrEmpty(ig.Condition));
-            if (itemGroup == null) itemGroup = projectRoot.AddItemGroup();
+            var itemGroup = projectRoot.ItemGroups.LastOrDefault(ig => string.IsNullOrEmpty(ig.Condition))
+                            ?? projectRoot.AddItemGroup();
             return itemGroup.AddItem("None", itemRelativePath);
         }
 
-        public EnvDTE.Project Project
+        public Project Project
         {
             get
             {
                 return _dte.GetProjectByUniqueName(_projectUniqueName)
-                    ?? _dte.GetProjectByName(_projectName);
+                       ?? _dte.GetProjectByName(_projectName);
             }
             set
             {
@@ -508,16 +509,16 @@ namespace Wijits.FastKoala.Transformations
         {
             get
             {
-                Guid? projectKind = !string.IsNullOrEmpty(Project.Kind) ? Guid.Parse(Project.Kind) : (Guid?)null;
+                var projectKind = !string.IsNullOrEmpty(Project.Kind) ? Guid.Parse(Project.Kind) : (Guid?) null;
                 var webProjectTypes = new[]
-                    {
-                        ProjectTypes.WebSite,
-                        ProjectTypes.AspNetMvc10,
-                        ProjectTypes.AspNetMvc20,
-                        ProjectTypes.AspNetMvc30,
-                        ProjectTypes.AspNetMvc40,
-                        ProjectTypes.WebApplication
-                    };
+                {
+                    ProjectTypes.WebSite,
+                    ProjectTypes.AspNetMvc10,
+                    ProjectTypes.AspNetMvc20,
+                    ProjectTypes.AspNetMvc30,
+                    ProjectTypes.AspNetMvc40,
+                    ProjectTypes.WebApplication
+                };
                 var projectTypes = Project.GetProjectTypeGuids().Split(';').Select(Guid.Parse);
                 return projectKind.HasValue && (webProjectTypes.Contains(projectKind.Value) ||
                                                 projectTypes.Any(t => webProjectTypes.Contains(t)));
@@ -534,15 +535,16 @@ namespace Wijits.FastKoala.Transformations
             get
             {
                 if (!HasBuildTimeTransformationsEnabled) return false;
-                var baseConfigPath = this.GetBaseConfigPath();
+                var baseConfigPath = GetBaseConfigPath();
                 var baseConfigInfo = new FileInfo(baseConfigPath);
                 var configDir = baseConfigInfo.DirectoryName;
                 foreach (var cfg in Project.ConfigurationManager.Cast<Configuration>().ToList())
                 {
                     var cfgname = cfg.ConfigurationName;
+                    Debug.Assert(configDir != null, "configDir != null");
                     var cfgfile = Path.Combine(configDir, (ProjectProperties.AppCfgType ?? GuessAppCfgType())
-                        + "." + cfgname
-                        + ".config");
+                                                          + "." + cfgname
+                                                          + ".config");
                     if (!File.Exists(cfgfile)) return true;
                     var relativePath = FileUtilities.GetRelativePath(Project.GetDirectory(), cfgfile);
                     if (relativePath.StartsWith(".\\")) relativePath = relativePath.Substring(2);

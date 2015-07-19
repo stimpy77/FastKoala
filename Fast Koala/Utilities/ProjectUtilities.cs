@@ -2,14 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Xml;
 using EnvDTE;
 using EnvDTE80;
 using Microsoft.Build.Construction;
 using Microsoft.VisualStudio.Shell.Interop;
-using IServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
 
 namespace Wijits.FastKoala.Utilities
 {
@@ -120,7 +118,6 @@ namespace Wijits.FastKoala.Utilities
 
         public static async Task SaveProjectRoot(this Project project)
         {
-            var projectName = project.Name;
             var dte = project.DTE;
             var projectFullPath = (new FileInfo(project.FullName).FullName);
             dte.UnloadProject(project);
@@ -144,62 +141,19 @@ namespace Wijits.FastKoala.Utilities
             root.Save(projectFullPath);
         }
 
+        // source: http://www.mztools.com/articles/2007/mz2007016.aspx
+        // along with [VsEnvironment.]GetService(GUID)
         public static string GetProjectTypeGuids(this Project project)
         {
-
-            string projectTypeGuids = "";
-            object service = null;
-            IVsSolution solution = null;
-            IVsHierarchy hierarchy = null;
-            IVsAggregatableProject aggregatableProject = null;
-            int result = 0;
-
-            service = GetService(project.DTE, typeof(IVsSolution));
-            solution = (IVsSolution)service;
-
-            result = solution.GetProjectOfUniqueName(project.UniqueName, out hierarchy);
-
-            if (result == 0)
-            {
-                aggregatableProject = (IVsAggregatableProject)hierarchy;
-                result = aggregatableProject.GetAggregateProjectTypeGuids(out projectTypeGuids);
-            }
-
+            var projectTypeGuids = "";
+            IVsHierarchy hierarchy;
+            var service = project.DTE.GetService(typeof(IVsSolution).GUID);
+            var solution = (IVsSolution)service;
+            var result = solution.GetProjectOfUniqueName(project.UniqueName, out hierarchy);
+            if (result != 0) return projectTypeGuids;
+            var aggregatableProject = (IVsAggregatableProject)hierarchy;
+            aggregatableProject.GetAggregateProjectTypeGuids(out projectTypeGuids);
             return projectTypeGuids;
-
-        }
-
-        private static object GetService(object serviceProvider, Type type)
-        {
-            return GetService(serviceProvider, type.GUID);
-        }
-
-        private static object GetService(object serviceProviderObject, Guid guid)
-        {
-
-            object service = null;
-            IServiceProvider serviceProvider = null;
-            IntPtr serviceIntPtr = new IntPtr();
-            int hr = 0;
-            Guid SIDGuid;
-            Guid IIDGuid;
-
-            SIDGuid = guid;
-            IIDGuid = SIDGuid;
-            serviceProvider = (IServiceProvider)serviceProviderObject;
-            hr = serviceProvider.QueryService(ref SIDGuid, ref IIDGuid, out serviceIntPtr);
-
-            if (hr != 0)
-            {
-                Marshal.ThrowExceptionForHR(hr);
-            }
-            else if (!serviceIntPtr.Equals(IntPtr.Zero))
-            {
-                service = Marshal.GetObjectForIUnknown(serviceIntPtr);
-                Marshal.Release(serviceIntPtr);
-            }
-
-            return service;
         }
     }
 }

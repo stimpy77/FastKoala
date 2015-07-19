@@ -1,24 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Linq;
+using EnvDTE;
 using Microsoft.Build.Construction;
 
 namespace Wijits.FastKoala.Utilities
 {
     public class ProjectProperties
     {
-        private EnvDTE.DTE _dte;
+        private DTE _dte;
         private string _projectUniqueName;
         private string _projectName;
-        public ProjectProperties(EnvDTE.Project project)
+        public ProjectProperties(Project project)
         {
             _dte = project.DTE;
             Project = project;
         }
 
-        public EnvDTE.Project Project
+        public Project Project
         {
             get
             {

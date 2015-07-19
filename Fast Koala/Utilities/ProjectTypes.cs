@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Wijits.FastKoala.Utilities
 {
     // from http://www.codeproject.com/Reference/720512/List-of-Visual-Studio-Project-Type-GUIDs
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
     public static class ProjectTypes
     {
         public static Guid AspNetMvc10 = new Guid("603C0E0B-DB56-11DC-BE95-000D561079B0");
