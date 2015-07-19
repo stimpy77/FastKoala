@@ -2,7 +2,7 @@
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
     <Identity Id="5a540277-c820-4fb4-9cb5-f878fc9af04e" Version="1.0.2" Language="en-US" Publisher="jon@jondavis.net" />
-    <DisplayName>Fast Koala</DisplayName>
+    <DisplayName>Fast Koala (Web.config/App.config build-time transforms)</DisplayName>
     <Description xml:space="preserve">Enables config file transformations at build-time for common project types including web apps (not web sites). </Description>
     <MoreInfo>https://github.com/stimpy77/FastKoala</MoreInfo>
     <License>LICENSE.txt</License>
