@@ -6,7 +6,7 @@ namespace Wijits.FastKoala.Utilities
 {
     public class ProjectProperties
     {
-        private DTE _dte;
+        private readonly DTE _dte;
         private string _projectUniqueName;
         private string _projectName;
         public ProjectProperties(Project project)

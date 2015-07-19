@@ -33,6 +33,7 @@ namespace Wijits.FastKoala.Transformations
             _ownerWindow = ownerWindow;
         }
 
+        /// <remarks>Menu item entry point</remarks>
         public async Task<bool> EnableBuildTimeConfigTransformations()
         {
             if (!CanEnableBuildTimeTransformations) return false;
@@ -42,7 +43,7 @@ namespace Wijits.FastKoala.Transformations
             if (ProjectIsWebType || ProjectLooksLikeClickOnce)
             {
                 title = "Enable inline build-time transformations? (Confirmation)";
-                message = "This action will cause your " + (ProjectProperties.AppCfgType ?? GuessAppCfgType())
+                message = "This action will cause your " + (ProjectProperties.AppCfgType ?? DetermineAppCfgType())
                           + ".config to be regenerated in your design-time environment every time you build. "
                           + "Are you sure you want to enable inline build-time transformations?";
             }
@@ -110,7 +111,17 @@ namespace Wijits.FastKoala.Transformations
             return true;
         }
 
-        private string GuessAppCfgType()
+        /// <remarks>Menu item entry point</remarks>
+        public async Task AddMissingTransforms()
+        {
+            if (!Project.Saved) Project.Save();
+            var baseConfigFile = GetBaseConfigPath();
+            if (baseConfigFile == null) return;
+            await AddMissingTransforms(baseConfigFile);
+            await Project.SaveProjectRoot();
+        }
+
+        private string DetermineAppCfgType()
         {
             return ProjectIsWebType ? "Web" : "App";
         }
@@ -204,16 +215,6 @@ namespace Wijits.FastKoala.Transformations
             await AddMissingTransforms(baseConfigFile);
 
             return true;
-        }
-
-        /// <remarks>Menu item entry point</remarks>
-        public async Task AddMissingTransforms()
-        {
-            if (!Project.Saved) Project.Save();
-            var baseConfigFile = GetBaseConfigPath();
-            if (baseConfigFile == null) return;
-            await AddMissingTransforms(baseConfigFile);
-            await Project.SaveProjectRoot();
         }
 
         private string GetBaseConfigPath()
@@ -437,11 +438,13 @@ namespace Wijits.FastKoala.Transformations
             var xml = new XmlDocument();
             xml.Load(baseConfigFullPath);
             var commentXml = string.Format(@"
-                    !! WARNING !!
-                    Do not modify the {0}.config file directly. Always edit the configurations in
-                    - {1}\{0}.{2}.config
-                    - {1}\{0}.[Debug|Release].config
-                ", ProjectProperties.AppCfgType, ProjectProperties.ConfigDir, ProjectProperties.CfgBaseName);
+
+    !! WARNING !!
+    Do not modify the {0}.config file directly. Always edit the configurations in
+    - {1}\{0}.{2}.config
+    - {1}\{0}.[Debug|Release].config
+
+", ProjectProperties.AppCfgType, ProjectProperties.ConfigDir, ProjectProperties.CfgBaseName);
             var commentXmlNode = xml.CreateComment(commentXml);
             Debug.Assert(xml.DocumentElement != null, "xml.DocumentElement != null");
             if (xml.DocumentElement.ChildNodes.Count > 0)
@@ -542,7 +545,7 @@ namespace Wijits.FastKoala.Transformations
                 {
                     var cfgname = cfg.ConfigurationName;
                     Debug.Assert(configDir != null, "configDir != null");
-                    var cfgfile = Path.Combine(configDir, (ProjectProperties.AppCfgType ?? GuessAppCfgType())
+                    var cfgfile = Path.Combine(configDir, (ProjectProperties.AppCfgType ?? DetermineAppCfgType())
                                                           + "." + cfgname
                                                           + ".config");
                     if (!File.Exists(cfgfile)) return true;
