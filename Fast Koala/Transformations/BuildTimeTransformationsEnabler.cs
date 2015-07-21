@@ -271,11 +271,8 @@ namespace Wijits.FastKoala.Transformations
         {
             resourceName = typeof (FastKoalaPackage).Namespace + @".Resources." + resourceName.Replace("\\", ".");
             var assembly = typeof (BuildTimeTransformationsEnabler).Assembly;
-            using (
-                var stream = assembly.GetManifestResourceStream(string.Format(resourceName, resourcePlaceholderValue))
-                             ??
-                             assembly.GetManifestResourceStream(string.Format(resourceName, resourcePlaceholderDefault))
-                )
+            using (var stream = assembly.GetManifestResourceStream(string.Format(resourceName, resourcePlaceholderValue))
+                             ?? assembly.GetManifestResourceStream(string.Format(resourceName, resourcePlaceholderDefault)))
             {
                 var parentDirectory = Directory.GetParent(targetPath).FullName;
                 if (!Directory.Exists(parentDirectory)) Directory.CreateDirectory(parentDirectory);
@@ -333,8 +330,8 @@ namespace Wijits.FastKoala.Transformations
                 // move the App/Web.config file
                 var oldcfgfile = string.Format("{0}.config", ProjectProperties.AppCfgType);
                 var cfgfullpath = Path.Combine(Project.GetDirectory(), oldcfgfile);
-                var newBaseConfigFile = string.Format(@"{0}.{1}.config", ProjectProperties.AppCfgType,
-                    ProjectProperties.CfgBaseName);
+                var newBaseConfigFile = string.Format(@"{0}.{1}.config", 
+                    ProjectProperties.AppCfgType, ProjectProperties.CfgBaseName);
                 var newBaseConfigPath = string.Format(@"{0}\{1}", ProjectProperties.ConfigDir, newBaseConfigFile);
                 var newBaseConfigFullPath = baseConfigFullPath = Path.Combine(Project.GetDirectory(), newBaseConfigPath);
                 _logger.LogInfo("Moving " + oldcfgfile + " to " + newBaseConfigPath);
@@ -394,8 +391,7 @@ namespace Wijits.FastKoala.Transformations
                     // and update the proejct manifest reference to the file
                     var prjroot = Project.GetProjectRoot();
                     var xfrmitem = prjroot.Items.SingleOrDefault(item => item.Include.ToLower() == xfrmname.ToLower())
-                                   ??
-                                   prjroot.Items.SingleOrDefault(item => item.Include.ToLower() == xfrmpath.ToLower());
+                                ?? prjroot.Items.SingleOrDefault(item => item.Include.ToLower() == xfrmpath.ToLower());
                     if (xfrmitem == null) xfrmitem = AddItemToProject(xfrmpath);
                     else xfrmitem.Include = xfrmpath;
                     var metadata = xfrmitem.Metadata.SingleOrDefault(m => m.Name == "DependentUpon")

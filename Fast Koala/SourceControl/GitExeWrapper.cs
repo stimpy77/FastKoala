@@ -65,6 +65,8 @@ namespace Wijits.FastKoala.SourceControl
             {
                 _logger.LogWarn("Failure in git mv (move), destination missing. Moving directly.");
                 File.Move(source, destination);
+                TaskResult += await GitExec("add " + destination);
+                TaskResult += await GitExec("rm " + source);
             }
         }
 
