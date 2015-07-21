@@ -207,7 +207,7 @@ namespace Wijits.FastKoala.Transformations
             if (string.IsNullOrEmpty(Project.GetConfigFile()))
             {
                 baseConfigFile = Path.Combine(Project.GetDirectory(), ProjectProperties.AppCfgType + ".config");
-                WriteFromManifest(@"Transforms\{0}.config", appcfgtype, "App", baseConfigFile);
+                FileUtilities.WriteFileFromAssemblyResourceManifest(@"Transforms\{0}.config", appcfgtype, "App", baseConfigFile);
                 await _io.AddIfProjectIsSourceControlled(Project, baseConfigFile);
                 AddItemToProject(baseConfigFile);
             }
@@ -248,7 +248,7 @@ namespace Wijits.FastKoala.Transformations
                 if (!File.Exists(xfrmfullpath))
                 {
                     _logger.LogInfo("Creating " + xfrmpath);
-                    WriteFromManifest(@"Transforms\Web.{0}.config", cfgname, "Release", xfrmfullpath);
+                    FileUtilities.WriteFileFromAssemblyResourceManifest(@"Transforms\Web.{0}.config", cfgname, "Release", xfrmfullpath);
                     await _io.AddIfProjectIsSourceControlled(Project, xfrmfullpath);
                 }
                 var projectItem = Project.GetProjectRoot().Items.SingleOrDefault(item => item.Include == xfrmpath)
@@ -262,24 +262,6 @@ namespace Wijits.FastKoala.Transformations
                 else if (projectItem.Metadata.Single(m => m.Name == "DependentUpon").Value != cfgfilename)
                 {
                     projectItem.Metadata.Single(m => m.Name == "DependentUpon").Value = cfgfilename;
-                }
-            }
-        }
-
-        private void WriteFromManifest(string resourceName, string resourcePlaceholderValue,
-            string resourcePlaceholderDefault, string targetPath)
-        {
-            resourceName = typeof (FastKoalaPackage).Namespace + @".Resources." + resourceName.Replace("\\", ".");
-            var assembly = typeof (BuildTimeTransformationsEnabler).Assembly;
-            using (var stream = assembly.GetManifestResourceStream(string.Format(resourceName, resourcePlaceholderValue))
-                             ?? assembly.GetManifestResourceStream(string.Format(resourceName, resourcePlaceholderDefault)))
-            {
-                var parentDirectory = Directory.GetParent(targetPath).FullName;
-                if (!Directory.Exists(parentDirectory)) Directory.CreateDirectory(parentDirectory);
-                using (var fileStream = File.OpenWrite(targetPath))
-                {
-                    Debug.Assert(stream != null, "stream != null");
-                    stream.CopyTo(fileStream);
                 }
             }
         }
@@ -305,7 +287,7 @@ namespace Wijits.FastKoala.Transformations
                 var baseConfigPath = string.Format(@"{0}\{1}", ProjectProperties.ConfigDir, baseConfigFile);
                 baseConfigFullPath = Path.Combine(Project.GetDirectory(), baseConfigPath);
                 _logger.LogInfo("Creating " + baseConfigPath);
-                WriteFromManifest(@"Transforms\{0}.config", ProjectProperties.AppCfgType, "Web", baseConfigFullPath);
+                FileUtilities.WriteFileFromAssemblyResourceManifest(@"Transforms\{0}.config", ProjectProperties.AppCfgType, "Web", baseConfigFullPath);
                 await _io.AddIfProjectIsSourceControlled(Project, baseConfigFullPath);
                 AddItemToProject(baseConfigPath);
 
@@ -318,7 +300,7 @@ namespace Wijits.FastKoala.Transformations
                     if (!File.Exists(xfrmpath))
                     {
                         _logger.LogInfo("Creating " + xfrmname);
-                        WriteFromManifest(@"Transforms\Web.{0}.config", cfgname, "Release", xfrmpath);
+                        FileUtilities.WriteFileFromAssemblyResourceManifest(@"Transforms\Web.{0}.config", cfgname, "Release", xfrmpath);
                         await _io.AddIfProjectIsSourceControlled(Project, xfrmFullPath);
                         var item = AddItemToProject(xfrmpath);
                         item.AddMetadata("DependentUpon", baseConfigFile);
@@ -379,7 +361,7 @@ namespace Wijits.FastKoala.Transformations
                     if (replaceXfrm || (!File.Exists(xfrmpath) && !File.Exists(oldxfrmpath)))
                     {
                         _logger.LogInfo("Creating " + xfrmpath);
-                        WriteFromManifest(@"Transforms\Web.{0}.config", cfgname, "Release", xfrmpath);
+                        FileUtilities.WriteFileFromAssemblyResourceManifest(@"Transforms\Web.{0}.config", cfgname, "Release", xfrmpath);
                         await _io.AddIfProjectIsSourceControlled(Project, xfrmFullPath);
                         if (!replaceXfrm)
                         {

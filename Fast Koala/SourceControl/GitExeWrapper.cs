@@ -61,10 +61,14 @@ namespace Wijits.FastKoala.SourceControl
                 throw new FileNotFoundException("Source file not found", source);
             }
             TaskResult = await GitExec("mv \"" + source + "\" \"" + destination + "\"");
-            if (!File.Exists(destination))
+            if (!File.Exists(destination) && !Directory.Exists(destination))
             {
                 _logger.LogWarn("Failure in git mv (move), destination missing. Moving directly.");
-                File.Move(source, destination);
+                if (File.Exists(source))
+                    File.Move(source, destination);
+                else if (Directory.Exists(source))
+                    Directory.Move(source, destination);
+                else throw new Exception("Invalid source for move operation: " + source);
                 TaskResult += await GitExec("add " + destination);
                 TaskResult += await GitExec("rm " + source);
             }

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using Wijits.FastKoala.Transformations;
 
 namespace Wijits.FastKoala.Utilities
 {
@@ -74,6 +75,24 @@ namespace Wijits.FastKoala.Utilities
                     return fullPath;
             }
             return null;
+        }
+
+        public static void WriteFileFromAssemblyResourceManifest(string resourceName, string resourcePlaceholderValue,
+            string resourcePlaceholderDefault, string targetPath)
+        {
+            var assembly = typeof(FastKoalaPackage).Assembly;
+            resourceName = typeof(FastKoalaPackage).Namespace + @".Resources." + resourceName.Replace("\\", ".");
+            using (var stream = assembly.GetManifestResourceStream(string.Format(resourceName, resourcePlaceholderValue))
+                             ?? assembly.GetManifestResourceStream(string.Format(resourceName, resourcePlaceholderDefault)))
+            {
+                var parentDirectory = Directory.GetParent(targetPath).FullName;
+                if (!Directory.Exists(parentDirectory)) Directory.CreateDirectory(parentDirectory);
+                using (var fileStream = File.OpenWrite(targetPath))
+                {
+                    Debug.Assert(stream != null, "stream != null");
+                    stream.CopyTo(fileStream);
+                }
+            }
         }
     }
 }
