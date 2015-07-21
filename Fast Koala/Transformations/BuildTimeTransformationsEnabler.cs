@@ -407,7 +407,9 @@ namespace Wijits.FastKoala.Transformations
             }
 
             // 4c. inject warning xml to base
-            InjectBaseConfigWarningComment(baseConfigFullPath);
+            if (File.Exists(baseConfigFullPath))
+                InjectBaseConfigWarningComment(baseConfigFullPath);
+            else _logger.LogWarn("Unexpected missing base file: " + baseConfigFullPath);
 
             // 4d. add Clean target cleanup of web.config
             var projectRoot = Project.GetProjectRoot();

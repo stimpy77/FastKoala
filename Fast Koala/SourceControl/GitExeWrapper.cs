@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -51,7 +52,20 @@ namespace Wijits.FastKoala.SourceControl
 
         public async Task Move(string source, string destination)
         {
+            if (!source.Contains(":") && !source.StartsWith("\\"))
+            {
+                source = Path.Combine(Environment.CurrentDirectory, source);
+            }
+            if (!File.Exists(source) && !Directory.Exists(source))
+            {
+                throw new FileNotFoundException("Source file not found", source);
+            }
             TaskResult = await GitExec("mv \"" + source + "\" \"" + destination + "\"");
+            if (!File.Exists(destination))
+            {
+                _logger.LogWarn("Failure in git mv (move), destination missing. Moving directly.");
+                File.Move(source, destination);
+            }
         }
 
         public async Task Delete(string filename)
