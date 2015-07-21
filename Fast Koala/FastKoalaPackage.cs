@@ -91,9 +91,14 @@ namespace Wijits.FastKoala
         {
             var logger = Dte.GetLogger();
             var io = await VsFileSystemManipulatorFactory.GetFileSystemManipulatorForEnvironment(project);
-            var nativeWindow = NativeWindow.FromHandle(new IntPtr(Dte.MainWindow.HWnd));
+            var nativeWindow = GetNativeWindow();
             Debug.Assert(project != null, "project != null");
             return new BuildTimeTransformationsEnabler(project, logger, io, nativeWindow);
+        }
+
+        private IWin32Window GetNativeWindow()
+        {
+            return NativeWindow.FromHandle(new IntPtr(Dte.MainWindow.HWnd));
         }
 
         private DTE Dte
@@ -103,25 +108,34 @@ namespace Wijits.FastKoala
 
         private EnvDTE.Project GetSelectedProject()
         {
-            var monitorSelection = GetGlobalService(typeof(SVsShellMonitorSelection)) as IVsMonitorSelection;
-            IVsMultiItemSelect multiItemSelect = null;
-            var hierarchyPtr = IntPtr.Zero;
-            var selectionContainerPtr = IntPtr.Zero;
-            uint itemid;
-            var hr = monitorSelection.GetCurrentSelection(out hierarchyPtr, out itemid, out multiItemSelect,
-                out selectionContainerPtr);
-            if (ErrorHandler.Failed(hr) || hierarchyPtr == IntPtr.Zero || itemid == VSConstants.VSITEMID_NIL)
+            try
             {
-                // there is no selection
+                var monitorSelection = GetGlobalService(typeof (SVsShellMonitorSelection)) as IVsMonitorSelection;
+                IVsMultiItemSelect multiItemSelect = null;
+                var hierarchyPtr = IntPtr.Zero;
+                var selectionContainerPtr = IntPtr.Zero;
+                uint itemid;
+                var hr = monitorSelection.GetCurrentSelection(out hierarchyPtr, out itemid, out multiItemSelect,
+                    out selectionContainerPtr);
+                if (ErrorHandler.Failed(hr) || hierarchyPtr == IntPtr.Zero || itemid == VSConstants.VSITEMID_NIL)
+                {
+                    // there is no selection
+                    return null;
+                }
+                var hierarchy = Marshal.GetObjectForIUnknown(hierarchyPtr) as IVsHierarchy;
+                if (hierarchy == null) return null;
+                object objProj;
+                hierarchy.GetProperty(itemid, (int) __VSHPROPID.VSHPROPID_ExtObject, out objProj);
+                var projectItem = objProj as EnvDTE.ProjectItem;
+                var project = objProj as EnvDTE.Project;
+
+                return project ?? (projectItem != null ? projectItem.ContainingProject : null);
+            }
+            catch (Exception e)
+            {
+                Dte.GetLogger().LogWarn("Couldn't find selected project. " + e.Message);
                 return null;
             }
-            var hierarchy = Marshal.GetObjectForIUnknown(hierarchyPtr) as IVsHierarchy;
-            if (hierarchy == null) return null;
-            object objProj;
-            hierarchy.GetProperty(itemid, (int)__VSHPROPID.VSHPROPID_ExtObject, out objProj);
-            var projectItem = objProj as EnvDTE.ProjectItem;
-            var project = objProj as EnvDTE.Project;
-            return project ?? projectItem.ContainingProject;
         }
 
         #endregion
@@ -160,6 +174,7 @@ namespace Wijits.FastKoala
             // if not leave the menu hidden
             if (!isConfig) return;
             var project = GetSelectedProject();
+            if (project == null) return;
 
             var transformationsEnabler = await GetTransformationsEnabler(project);
             if (!transformationsEnabler.CanEnableBuildTimeTransformations)
@@ -184,6 +199,7 @@ namespace Wijits.FastKoala
             menuCommand.Enabled = false;
 
             var project = GetSelectedProject();
+            if (project == null) return;
 
             var transformationsEnabler = await GetTransformationsEnabler(project);
             if (!transformationsEnabler.CanEnableBuildTimeTransformations)
@@ -202,8 +218,18 @@ namespace Wijits.FastKoala
         private async void EnableBuildTimeTransformationsMenuItem_Invoke(object sender, EventArgs e)
         {
             var project = GetSelectedProject();
+            if (project == null) return;
             var transformationsEnabler = await GetTransformationsEnabler(project);
-            await transformationsEnabler.EnableBuildTimeConfigTransformations();
+            try
+            {
+                await transformationsEnabler.EnableBuildTimeConfigTransformations();
+            }
+            catch (Exception ex)
+            {
+                Dte.GetLogger().LogError(ex.ToString());
+                MessageBox.Show(GetNativeWindow(), "An unexpected error occurred. Please report the Output window logs."
+                    + "\r\n\r\n" + ex.Message, "Fast Koala", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
 #endregion
@@ -237,6 +263,7 @@ namespace Wijits.FastKoala
             if (!isConfig) return;
 
             var project = GetSelectedProject();
+            if (project == null) return;
             var transformationsEnabler = await GetTransformationsEnabler(project);
             if (transformationsEnabler.HasMissingTransforms)
             {
@@ -248,6 +275,7 @@ namespace Wijits.FastKoala
         private async void AddMissingTransformationsMenuItem_Invoke(object sender, EventArgs e)
         {
             var project = GetSelectedProject();
+            if (project == null) return;
             var transformationsEnabler = await GetTransformationsEnabler(project);
             await transformationsEnabler.AddMissingTransforms();
         }

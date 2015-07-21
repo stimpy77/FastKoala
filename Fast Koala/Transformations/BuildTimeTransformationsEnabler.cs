@@ -48,8 +48,7 @@ namespace Wijits.FastKoala.Transformations
                           + "Are you sure you want to enable inline build-time transformations?";
             }
             var dialogResult = MessageBox.Show(_ownerWindow,
-                message,
-                title, MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
+                message, title, MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
             if (dialogResult == DialogResult.Cancel) return false;
 
             _logger.LogInfo("Enabling config transformations.");
@@ -344,9 +343,8 @@ namespace Wijits.FastKoala.Transformations
                 await _io.Move(cfgfullpath, newBaseConfigFullPath);
 
                 // and update the proejct manifest reference to the file
-                var configItem =
-                    Project.GetProjectRoot()
-                        .Items.SingleOrDefault(item => item.Include.ToLower() == oldcfgfile.ToLower());
+                var configItem = Project.GetProjectRoot().Items
+                    .SingleOrDefault(item => item.Include.ToLower() == oldcfgfile.ToLower());
                 if (configItem == null) AddItemToProject(newBaseConfigPath);
                 else configItem.Include = newBaseConfigPath;
                 AddItemToProject(oldcfgfile); // needs to be in the project manifest, but not in source control
@@ -408,7 +406,7 @@ namespace Wijits.FastKoala.Transformations
 
             // 4c. inject warning xml to base
             if (File.Exists(baseConfigFullPath))
-                InjectBaseConfigWarningComment(baseConfigFullPath);
+                await InjectBaseConfigWarningComment(baseConfigFullPath);
             else _logger.LogWarn("Unexpected missing base file: " + baseConfigFullPath);
 
             // 4d. add Clean target cleanup of web.config
@@ -435,7 +433,7 @@ namespace Wijits.FastKoala.Transformations
             }
         }
 
-        private void InjectBaseConfigWarningComment(string baseConfigFullPath)
+        private async Task InjectBaseConfigWarningComment(string baseConfigFullPath)
         {
             var xml = new XmlDocument();
             xml.Load(baseConfigFullPath);
@@ -452,7 +450,7 @@ namespace Wijits.FastKoala.Transformations
             if (xml.DocumentElement.ChildNodes.Count > 0)
                 xml.DocumentElement.InsertBefore(commentXmlNode, xml.DocumentElement.FirstChild);
             else xml.DocumentElement.AppendChild(commentXmlNode);
-            _io.Checkout(baseConfigFullPath);
+            await _io.Checkout(baseConfigFullPath);
             xml.Save(baseConfigFullPath);
         }
 
