@@ -147,7 +147,12 @@ namespace Wijits.FastKoala
             return ReloadProject(dte, GetProjectByName(dte, projectName));
         }
 
-        private static void SelectProject(DTE dte, Project project)
+        public static void Select(this Project project)
+        {
+            SelectProject(project.DTE, project);
+        }
+
+        public static void SelectProject(DTE dte, Project project)
         {
             var solutionExplorer = dte.Windows.Item(Constants.vsWindowKindSolutionExplorer);
             solutionExplorer.Activate();
@@ -179,6 +184,11 @@ namespace Wijits.FastKoala
         {
             var projectUniqueName = project.UniqueName;
             var projectName = project.Name;
+            return ReloadSolutionAndReturnProject(dte, projectName, projectUniqueName);
+        }
+
+        public static Project ReloadSolutionAndReturnProject(this DTE dte, string projectName, string projectUniqueName)
+        {
             SaveAll(dte);
             var slnPath = dte.Solution.FullName;
             dte.Solution.Close();

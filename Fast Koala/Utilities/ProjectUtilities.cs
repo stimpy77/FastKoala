@@ -119,10 +119,20 @@ namespace Wijits.FastKoala.Utilities
         public static async Task SaveProjectRoot(this Project project)
         {
             var dte = project.DTE;
+            var projectName = project.Name;
+            var projectUniqueName = project.UniqueName;
             var projectFullPath = (new FileInfo(project.FullName).FullName);
+            project.Select();
             dte.UnloadProject(project);
             await SaveProjectRoot(dte, projectFullPath);
-            dte.ReloadJustUnloadedProject();
+            try
+            {
+                dte.ReloadJustUnloadedProject();
+            }
+            catch
+            {
+                dte.ReloadSolutionAndReturnProject(projectName, projectUniqueName);
+            }
         }
 
         public static async Task SaveProjectRoot(DTE dte, string projectFullName)
