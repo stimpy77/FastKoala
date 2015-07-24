@@ -251,11 +251,8 @@ namespace Wijits.FastKoala
             menuCommand.Enabled = true;
         }
 
-
         /// <summary>
-        ///     This function is the callback used to execute a command when the a menu item is clicked.
-        ///     See the Initialize method to see how the menu item is associated to this function using
-        ///     the OleMenuCommandService service and the MenuCommand class.
+        /// User clicked on "Enable build-time transformations"
         /// </summary>
         private async void EnableBuildTimeTransformationsMenuItem_Invoke(object sender, EventArgs e)
         {
