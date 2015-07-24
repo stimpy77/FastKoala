@@ -92,13 +92,13 @@ namespace Wijits.FastKoala
 
         private void SubscribeDteEvents()
         {
-            // make Web.config / App.config read-only in editor if it was generated
             (_documentEvents ?? (_documentEvents = Dte.Events.DocumentEvents))
                 .DocumentOpened += OnDocumentOpened;
         }
 
         private async void OnDocumentOpened(Document document)
         {
+            // make Web.config / App.config read-only in editor if it was generated
             try
             {
                 if (document.ProjectItem == null) return;
