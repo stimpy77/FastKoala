@@ -208,7 +208,10 @@ namespace Wijits.FastKoala.Transformations
             {
                 baseConfigFile = Path.Combine(Project.GetDirectory(), ProjectProperties.AppCfgType + ".config");
                 FileUtilities.WriteFileFromAssemblyResourceManifest(@"Transforms\{0}.config", appcfgtype, "App", baseConfigFile);
-                await _io.AddIfProjectIsSourceControlled(Project, baseConfigFile);
+                if (await _io.ItemIsUnderSourceControl(Project.FullName))
+                {
+                    await _io.Add(baseConfigFile);
+                }
                 AddItemToProject(baseConfigFile);
             }
             await AddMissingTransforms(baseConfigFile);
@@ -249,7 +252,10 @@ namespace Wijits.FastKoala.Transformations
                 {
                     _logger.LogInfo("Creating " + xfrmpath);
                     FileUtilities.WriteFileFromAssemblyResourceManifest(@"Transforms\Web.{0}.config", cfgname, "Release", xfrmfullpath);
-                    await _io.AddIfProjectIsSourceControlled(Project, xfrmfullpath);
+                    if (await _io.ItemIsUnderSourceControl(Project.FullName))
+                    {
+                        await _io.Add(xfrmfullpath);
+                    }
                 }
                 var projectItem = Project.GetProjectRoot().Items.SingleOrDefault(item => item.Include == xfrmpath)
                                   ?? AddItemToProject(xfrmpath);
@@ -279,17 +285,21 @@ namespace Wijits.FastKoala.Transformations
             // 4b. update project XML for moved files
             var baseConfig = Project.GetConfigFile();
             string baseConfigFullPath;
+            string baseConfigRelPath;
             if (string.IsNullOrEmpty(baseConfig))
             {
                 // create the App/Web.config file
                 var baseConfigFile = string.Format(@"{0}.{1}.config", ProjectProperties.AppCfgType,
                     ProjectProperties.CfgBaseName);
-                var baseConfigPath = string.Format(@"{0}\{1}", ProjectProperties.ConfigDir, baseConfigFile);
-                baseConfigFullPath = Path.Combine(Project.GetDirectory(), baseConfigPath);
-                _logger.LogInfo("Creating " + baseConfigPath);
+                baseConfigRelPath = string.Format(@"{0}\{1}", ProjectProperties.ConfigDir, baseConfigFile);
+                baseConfigFullPath = Path.Combine(Project.GetDirectory(), baseConfigRelPath);
+                _logger.LogInfo("Creating " + baseConfigRelPath);
                 FileUtilities.WriteFileFromAssemblyResourceManifest(@"Transforms\{0}.config", ProjectProperties.AppCfgType, "Web", baseConfigFullPath);
-                await _io.AddIfProjectIsSourceControlled(Project, baseConfigFullPath);
-                AddItemToProject(baseConfigPath);
+                if (await _io.ItemIsUnderSourceControl(Project.FullName))
+                {
+                    await _io.Add(baseConfigFullPath);
+                }
+                AddItemToProject(baseConfigRelPath);
 
                 foreach (var cfg in Project.ConfigurationManager.Cast<Configuration>().ToList())
                 {
@@ -301,7 +311,10 @@ namespace Wijits.FastKoala.Transformations
                     {
                         _logger.LogInfo("Creating " + xfrmname);
                         FileUtilities.WriteFileFromAssemblyResourceManifest(@"Transforms\Web.{0}.config", cfgname, "Release", xfrmpath);
-                        await _io.AddIfProjectIsSourceControlled(Project, xfrmFullPath);
+                        if (await _io.ItemIsUnderSourceControl(Project.FullName))
+                        {
+                            await _io.Add(xfrmFullPath);
+                        }
                         var item = AddItemToProject(xfrmpath);
                         item.AddMetadata("DependentUpon", baseConfigFile);
                     }
@@ -314,9 +327,9 @@ namespace Wijits.FastKoala.Transformations
                 var cfgfullpath = Path.Combine(Project.GetDirectory(), oldcfgfile);
                 var newBaseConfigFile = string.Format(@"{0}.{1}.config", 
                     ProjectProperties.AppCfgType, ProjectProperties.CfgBaseName);
-                var newBaseConfigPath = string.Format(@"{0}\{1}", ProjectProperties.ConfigDir, newBaseConfigFile);
-                var newBaseConfigFullPath = baseConfigFullPath = Path.Combine(Project.GetDirectory(), newBaseConfigPath);
-                _logger.LogInfo("Moving " + oldcfgfile + " to " + newBaseConfigPath);
+                baseConfigRelPath = string.Format(@"{0}\{1}", ProjectProperties.ConfigDir, newBaseConfigFile);
+                var newBaseConfigFullPath = baseConfigFullPath = Path.Combine(Project.GetDirectory(), baseConfigRelPath);
+                _logger.LogInfo("Moving " + oldcfgfile + " to " + baseConfigRelPath);
                 var parentDir = Directory.GetParent(newBaseConfigFullPath).FullName;
                 if (!Directory.Exists(parentDir)) Directory.CreateDirectory(parentDir);
                 await _io.Move(cfgfullpath, newBaseConfigFullPath);
@@ -324,8 +337,8 @@ namespace Wijits.FastKoala.Transformations
                 // and update the proejct manifest reference to the file
                 var configItem = Project.GetProjectRoot().Items
                     .SingleOrDefault(item => item.Include.ToLower() == oldcfgfile.ToLower());
-                if (configItem == null) AddItemToProject(newBaseConfigPath);
-                else configItem.Include = newBaseConfigPath;
+                if (configItem == null) AddItemToProject(baseConfigRelPath);
+                else configItem.Include = baseConfigRelPath;
                 AddItemToProject(oldcfgfile); // needs to be in the project manifest, but not in source control
 
                 foreach (var cfg in Project.ConfigurationManager.Cast<Configuration>().ToList())
@@ -362,7 +375,10 @@ namespace Wijits.FastKoala.Transformations
                     {
                         _logger.LogInfo("Creating " + xfrmpath);
                         FileUtilities.WriteFileFromAssemblyResourceManifest(@"Transforms\Web.{0}.config", cfgname, "Release", xfrmpath);
-                        await _io.AddIfProjectIsSourceControlled(Project, xfrmFullPath);
+                        if (await _io.ItemIsUnderSourceControl(Project.FullName))
+                        {
+                            await _io.Add(xfrmFullPath);
+                        }
                         if (!replaceXfrm)
                         {
                             var item = AddItemToProject(xfrmpath);
@@ -393,6 +409,12 @@ namespace Wijits.FastKoala.Transformations
             cleanTarget.AfterTargets = "Clean";
             var task = cleanTarget.AddTask("Delete");
             task.SetParameter("Files", "$(AppCfgType).config");
+
+            // add ignore for source control
+            var appcfgfilter = ProjectProperties.AppCfgType + ".config";
+            var comment = string.Format("{0} is a transient file generated at build-time. See instead {1}", 
+                appcfgfilter, baseConfigRelPath);
+            await _io.AddItemToIgnoreList(appcfgfilter, comment);
 
             return true;
         }

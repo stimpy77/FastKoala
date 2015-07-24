@@ -43,9 +43,8 @@ namespace Wijits.FastKoala.SourceControl
             }
         }
 
-        public async Task<bool> AddIfProjectIsSourceControlled(EnvDTE.Project project, string filename)
+        public async Task<bool> Add(string filename)
         {
-            if (!(await ItemIsUnderSourceControl(project.FullName))) return false;
             TaskResult = await GitExec("add \"" + filename + "\"");
             return true;
         }
@@ -87,13 +86,31 @@ namespace Wijits.FastKoala.SourceControl
             await Task.Run(() => { });
         }
 
-        public async Task UndoMove(string filename, string originalPath)
+        public async Task AddItemToIgnoreList(string relativeIgnorePattern, string precedingComment = null)
         {
-            // git has no concept of undoing a move unless the entire branch is reset/restored
-            // so we must just move back manually
-            if (string.IsNullOrEmpty(originalPath)) 
-                throw new InvalidOperationException("OriginalPath not provided");
-            await GitExec("mv \"" + filename + "\" \"" + originalPath + "\"");
+            var gitIgnoreFile = Path.Combine(_workingDirectory, ".gitignore");
+            if (!File.Exists(gitIgnoreFile))
+            {
+                File.WriteAllText(gitIgnoreFile, "");
+                await GitExec("add \"" + gitIgnoreFile + "\"");
+            }
+            using (var sw = File.AppendText(gitIgnoreFile))
+            {
+                await Checkout(gitIgnoreFile);
+                if ((new FileInfo(gitIgnoreFile)).Length > 0)
+                {
+                    await sw.WriteLineAsync();
+                }
+                if (!string.IsNullOrEmpty(precedingComment))
+                {
+                    var comments = precedingComment.Replace("\r", "").Split('\n');
+                    foreach (var comment in comments)
+                    {
+                        await sw.WriteLineAsync("# " + comment);
+                    }
+                }
+                await sw.WriteLineAsync(relativeIgnorePattern.Replace("\\", "/"));
+            }
         }
 
         public string TaskResult { get; private set; }

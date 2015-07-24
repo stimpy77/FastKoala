@@ -15,9 +15,9 @@ namespace Wijits.FastKoala.SourceControl
             return Task.FromResult(false);
         }
 
-        public async Task<bool> AddIfProjectIsSourceControlled(Project project, string filename)
+        public async Task<bool> Add(string filename)
         {
-            // do nothing
+            // NO!
             return await Task.Run(() => false);
         }
 
@@ -33,16 +33,16 @@ namespace Wijits.FastKoala.SourceControl
             await Task.Run(() => { });
         }
 
-
-        public async Task UndoMove(string filename, string originalFilename)
-        {
-            await Move(filename, originalFilename);
-        }
-
-
         public async Task Checkout(string filename)
         {
             // whatever
+            await Task.Run(() => { });
+        }
+
+
+        public async Task AddItemToIgnoreList(string relativeIgnorePattern, string precedingComment = null)
+        {
+            // .. ignored!
             await Task.Run(() => { });
         }
     }

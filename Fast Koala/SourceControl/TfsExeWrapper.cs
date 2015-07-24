@@ -70,9 +70,8 @@ namespace Wijits.FastKoala.SourceControl
             return null;
         }
 
-        public async Task<bool> AddIfProjectIsSourceControlled(EnvDTE.Project project, string filename)
+        public async Task<bool> Add(string filename)
         {
-            if (!(await ItemIsUnderSourceControl(project.FullName))) return false;
             TaskResult = await TfExec("add \"" + filename + "\"");
             return true;
         }
@@ -92,19 +91,30 @@ namespace Wijits.FastKoala.SourceControl
             TaskResult = await TfExec("checkout \"" + filename + "\"");
         }
 
-        public async Task UndoMove(string filename, string originalPath)
+        public async Task AddItemToIgnoreList(string relativeIgnorePattern, string precedingComment = null)
         {
-            var contents = (new FileInfo(filename)).Length < 1048576 ? File.ReadAllBytes(filename) : null;
-            TaskResult = await TfExec("undo \"" + filename + "\"");
-            if (!string.IsNullOrEmpty(originalPath) && File.Exists(filename) && !File.Exists(originalPath))
+            var tfIgnoreFile = Path.Combine(_workingDirectory, ".tfignore");
+            if (!File.Exists(tfIgnoreFile))
             {
-                // uhps. we undid an edit and not a move. restore and move ...
-                if (contents != null)
+                File.WriteAllText(tfIgnoreFile, "");
+                await TfExec("add \"" + tfIgnoreFile + "\"");
+            }
+            using (var sw = File.AppendText(tfIgnoreFile))
+            {
+                await Checkout(tfIgnoreFile);
+                if ((new FileInfo(tfIgnoreFile)).Length > 0)
                 {
-                    await Checkout(filename);
-                    File.WriteAllBytes(filename, contents);
+                    await sw.WriteLineAsync();
                 }
-                TaskResult = await TfExec("move \"" + filename + "\" \"" + originalPath + "\"");
+                if (!string.IsNullOrEmpty(precedingComment))
+                {
+                    var comments = precedingComment.Replace("\r", "").Split('\n');
+                    foreach (var comment in comments)
+                    {
+                        await sw.WriteLineAsync("# " + comment);
+                    }
+                }
+                await sw.WriteLineAsync(relativeIgnorePattern);
             }
         }
 
