@@ -41,6 +41,7 @@ namespace Wijits.FastKoala
     [SuppressMessage("ReSharper", "MemberCanBeMadeStatic.Local")]
     public sealed class FastKoalaPackage : Package
     {
+        private DocumentEvents _documentEvents;
 
         /////////////////////////////////////////////////////////////////////////////
         // Overridden Package Implementation
@@ -54,8 +55,10 @@ namespace Wijits.FastKoala
         protected override void Initialize()
         {
             Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "Entering Initialize() of: {0}", ToString()));
-            VsEnvironment.Initialize(this);
             base.Initialize();
+            VsEnvironment.Initialize(this);
+
+            SubscribeDteEvents();
 
             // Add our command handlers for menu (commands must exist in the .vsct file)
             var mcs = GetService(typeof (IMenuCommandService)) as OleMenuCommandService;
@@ -85,6 +88,45 @@ namespace Wijits.FastKoala
             addMissingTransformationsMenuItem.BeforeQueryStatus +=
                 AddMissingTransformationsMenuItem_BeforeQueryStatus;
             mcs.AddCommand(addMissingTransformationsMenuItem);
+        }
+
+        private void SubscribeDteEvents()
+        {
+            // make Web.config / App.config read-only in editor if it was generated
+            (_documentEvents ?? (_documentEvents = Dte.Events.DocumentEvents))
+                .DocumentOpened += OnDocumentOpened;
+        }
+
+        private async void OnDocumentOpened(Document document)
+        {
+            try
+            {
+                if (document.ProjectItem == null) return;
+                var fileFullName = document.FullName;
+                var fileInfo = new FileInfo(fileFullName);
+                if (fileInfo.Extension.Replace(".", "").ToLower() != "config") return;
+                var project = GetSelectedProject();
+                if (project != null)
+                {
+                    var transforms = await GetTransformationsEnabler(project);
+                    var properties = transforms.ProjectProperties;
+                    if (transforms.HasBuildTimeTransformationsEnabled && properties.InlineTransformations == true && fileInfo.Name.ToLower() == properties.AppCfgType.ToLower() + ".config")
+                    {
+                        document.ReadOnly = true;
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+#if DEBUG
+                // Hi. Something went wrong while making 
+                // Web.config / App.config read-only in 
+                // the editor if it was generated. Maybe
+                // add some escape paths?
+                if (System.Diagnostics.Debugger.IsAttached)
+                    throw; // up
+#endif
+            }
         }
 
         private async Task<BuildTimeTransformationsEnabler> GetTransformationsEnabler(EnvDTE.Project project)
