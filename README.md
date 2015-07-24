@@ -1,12 +1,12 @@
 # Fast Koala
-Enables build-time config transforms for various project types including web apps (but not web sites, and Azure is not supported at this time), with future plans to also ease config name management and add MSBuild scripts (Imports directives to custom .targets files) to a project.
+Enables build-time config transforms for various project types including ASP.NET 4.6-or-below web apps (but not web sites, and Azure is not supported at this time), with future plans to also ease config name management and add MSBuild scripts (Imports directives to custom .targets files) to a project.
 
 ###"Build-time" means F5###
 
 All references to "build-time" refer to F6 (Build) or F5 ([Build and] Debug). This means that you can finally test web apps with different configuration transformations applied *without* publishing, you can simply select the configuration and hit F5.
 
 ###Inline Build-Time Transformations###
-This tool enables build-time transformations for web apps (not websites).
+This tool enables build-time transformations for ASP.NET 4.6-or-below web apps (not websites), including ASP.NET MVC 5.
 
     Web.config
     Web.Debug.config
