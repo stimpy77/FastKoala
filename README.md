@@ -83,7 +83,7 @@ So, the logic to find the base config file would be:
 * otherwise,
     * the base config file is at $(ConfigDir)\$(AppCfgType).config
 
-So, a complete path might be built as an MSBuild property as such,
+So, a complete path is built as an MSBuild property as such, which Fast Koala also adds ***[TO DO]***:
 
     <AppConfigBaseFileFullPath Condition="Exists('$(MSBuildProjectDirectory)\App.config')">$(MSBuildProjectDirectory)\App.config</AppConfigBaseFileFullPath>
     <AppConfigBaseFileFullPath Condition="Exists('$(MSBuildProjectDirectory)\Web.config')">$(MSBuildProjectDirectory)\Web.config</AppConfigBaseFileFullPath>
