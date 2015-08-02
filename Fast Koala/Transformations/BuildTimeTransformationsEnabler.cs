@@ -410,6 +410,17 @@ namespace Wijits.FastKoala.Transformations
             var task = cleanTarget.AddTask("Delete");
             task.SetParameter("Files", "$(AppCfgType).config");
 
+            // add <AppConfigBaseFileFullPath>
+            if (!projectRoot.Properties.Any(property => property.Name == "AppConfigBaseFileFullPath"))
+            {
+                var appConfigBaseFullPath = projectRoot.AddProperty("AppConfigBaseFileFullPath", @"$(MSBuildProjectDirectory)\App.config");
+                appConfigBaseFullPath.Condition = @"Exists('$(MSBuildProjectDirectory)\App.config')";
+                var webConfigBaseFullPath = projectRoot.AddProperty("AppConfigBaseFileFullPath", @"$(MSBuildProjectDirectory)\Web.config");
+                webConfigBaseFullPath.Condition = @"Exists('$(MSBuildProjectDirectory)\Web.config')";
+                var baseConfigBaseFullPath = projectRoot.AddProperty("AppConfigBaseFileFullPath", @"$(MSBuildProjectDirectory)\$(ConfigDir)\$(AppCfgType).Base.config");
+                baseConfigBaseFullPath.Condition = @"'$(InlineAppCfgTransforms)' == 'true'";
+            }
+
             // add ignore for source control
             var appcfgfilter = ProjectProperties.AppCfgType + ".config";
             var comment = string.Format("{0} is a transient file generated at build-time. See instead {1}", 
