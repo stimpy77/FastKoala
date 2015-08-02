@@ -18,7 +18,7 @@ This tool enables build-time transformations for ASP.NET 4.6-or-below web apps (
     App_Config\Web.Debug.config
     App_Config\Web.Release.config
   
-and Web.config at project root becomes transient (and should never be added to source control). **Web.config is created upon build and removed upon Clean.**
+and Web.config at project root becomes transient (and should never be added to source control). **Web.config is created upon build.**
 
 <sub><sup>(This was a feature I and many others always wanted from Slow Cheetah.)</sup></sub>
 

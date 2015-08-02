@@ -132,7 +132,7 @@ namespace Wijits.FastKoala.Transformations
             if (projectRoot.Targets.Any(t => t.Name == "TransformOnBuild")) return;
 
             var transformOnBuildTarget = projectRoot.AddTarget("TransformOnBuild");
-            transformOnBuildTarget.BeforeTargets = "Build";
+            transformOnBuildTarget.BeforeTargets = "PrepareForBuild";
             var propertyGroup = transformOnBuildTarget.AddPropertyGroup();
             // ReSharper disable InconsistentNaming
             var outputTypeExtension_exe = propertyGroup.AddProperty("outputTypeExtension", "exe");
@@ -403,22 +403,20 @@ namespace Wijits.FastKoala.Transformations
                 await InjectBaseConfigWarningComment(baseConfigFullPath);
             else _logger.LogWarn("Unexpected missing base file: " + baseConfigFullPath);
 
-            // 4d. add Clean target cleanup of web.config
-            var projectRoot = Project.GetProjectRoot();
-            var cleanTarget = projectRoot.AddTarget("RemoveConfigOnClean");
-            cleanTarget.AfterTargets = "Clean";
-            var task = cleanTarget.AddTask("Delete");
-            task.SetParameter("Files", "$(AppCfgType).config");
-
             // add <AppConfigBaseFileFullPath>
+            var projectRoot = Project.GetProjectRoot();
             if (!projectRoot.Properties.Any(property => property.Name == "AppConfigBaseFileFullPath"))
             {
-                var appConfigBaseFullPath = projectRoot.AddProperty("AppConfigBaseFileFullPath", @"$(MSBuildProjectDirectory)\App.config");
-                appConfigBaseFullPath.Condition = @"Exists('$(MSBuildProjectDirectory)\App.config')";
-                var webConfigBaseFullPath = projectRoot.AddProperty("AppConfigBaseFileFullPath", @"$(MSBuildProjectDirectory)\Web.config");
-                webConfigBaseFullPath.Condition = @"Exists('$(MSBuildProjectDirectory)\Web.config')";
-                var baseConfigBaseFullPath = projectRoot.AddProperty("AppConfigBaseFileFullPath", @"$(MSBuildProjectDirectory)\$(ConfigDir)\$(AppCfgType).Base.config");
-                baseConfigBaseFullPath.Condition = @"'$(InlineAppCfgTransforms)' == 'true'";
+                var appConfigBaseRelativePath = projectRoot.AddProperty("AppConfigBaseFilePath", @"App.config");
+                appConfigBaseRelativePath.Condition = @"Exists('$(MSBuildProjectDirectory)\App.config')";
+                var webConfigBaseRelativePath = projectRoot.AddProperty("AppConfigBaseFilePath", @"Web.config");
+                webConfigBaseRelativePath.Condition = @"Exists('$(MSBuildProjectDirectory)\Web.config')";
+                var baseConfigBaseRelativePath = projectRoot.AddProperty("AppConfigBaseFilePath", 
+                    @"$(ConfigDir)\$(AppCfgType).Base.config");
+                baseConfigBaseRelativePath.Condition = @"'$(InlineAppCfgTransforms)' == 'true'";
+                
+                projectRoot.AddProperty("AppConfigBaseFileFullPath",
+                    @"$(MSBuildProjectDirectory)\$(AppConfigBaseFilePath)");
             }
 
             // add ignore for source control
