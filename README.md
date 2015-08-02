@@ -50,6 +50,45 @@ This Visual Studio extension will modify your project by injecting a custom MSBu
 
 The complete and simple explanation of the core method of how this is accomplished is laid out in the following very useful resource from EdCharbeneau which upon reading it started this whole effort: https://gist.github.com/EdCharbeneau/9135216
 
+### NuGet packages and other caveats ###
+
+NuGet packages or other automated tasks that make tweaks to the web.config will need to be managed more carefully after Fast Koala is applied to a project. 
+
+#### If you are applying a NuGet package #### 
+
+1. Build the project first to generate the Web.config before applying the package.
+2. Back up the Web.config file to create a copy that you can use below
+3. Apply the package
+4. Perform a diff (use WinMerge or Beyond Compare) between the backup made in #2 and the Web.config as it is now. Manually observe the changes and migrate these changes to the Web.Base.config file.
+
+#### If you are a NuGet package author ####
+
+Fast Koala uses these .csproj / .vbproj project properties to build the path to Web.Base.config:
+
+    <!-- if not true, Web.config itself is the base config -->
+    <InlineTransformations>True</InlineTransformations> 
+    
+    <!-- Web.config vs App.config -->
+    <AppCfgType>Web</AppCfgType> 
+    
+    <!-- relative path to the parent directory of the base config -->
+    <ConfigDir>App_Config</ConfigDir> 
+    
+(Fast Koala does not use a FastKoala or FK or other prefix on the properties simply because once the change is initially applied Fast Koala is no longer involved. The changes made by Fast Koala are MSBuild script tweaks to make the .csproj/.vbproj smarter about your Web.config and, in Fast Koala's creator's opinion, Microsoft should have done it exactly this way.)
+
+So, the logic to find the base config file would be:
+
+* If the MSBuild property **InlineTransformations** is not true (not if it is false, because if it is not true it probably doesn't exist so it would be null or empty string) then
+    * the base config file is either App.config or Web.config
+* otherwise,
+    * the base config file is at $(ConfigDir)\$(AppCfgType).config
+
+So, a complete path might be built as an MSBuild property as such,
+
+    <AppConfigBaseFileFullPath Condition="Exists('$(MSBuildProjectDirectory)\App.config')">$(MSBuildProjectDirectory)\App.config</AppConfigBaseFileFullPath>
+    <AppConfigBaseFileFullPath Condition="Exists('$(MSBuildProjectDirectory)\Web.config')">$(MSBuildProjectDirectory)\Web.config</AppConfigBaseFileFullPath>
+    <AppConfigBaseFileFullPath Condition="'$(InlineTransformations)' == 'true'">$(MSBuildProjectDirectory)\$(ConfigDir)\$(AppCfgType).config</AppConfigBaseFileFullPath>
+
 ### Development notes ###
 
 This project *does not* use automated unit tests in source code. :(
