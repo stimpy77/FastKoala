@@ -64,9 +64,9 @@ namespace Wijits.FastKoala.Transformations
 
             // 2. determine if need to use inline transformations or bin transformations
             //  >> if web or clickonce, inline is mandatory
-            var inlineTransformations = ProjectProperties.InlineTransformations
+            var inlineTransformations = ProjectProperties.InlineAppCfgTransforms
                                         ??
-                                        (ProjectProperties.InlineTransformations =
+                                        (ProjectProperties.InlineAppCfgTransforms =
                                             (ProjectIsWebType || ProjectLooksLikeClickOnce)).Value;
 
             bool prepresult;
@@ -83,7 +83,7 @@ namespace Wijits.FastKoala.Transformations
             else prepresult = await PrepEnableBuildTimeConfigTransformationsForBin();
 
             if (prepresult == false) return false;
-            ProjectProperties.BuildTimeTransformsEnabled = true;
+            ProjectProperties.BuildTimeAppCfgTransformsEnabled = true;
 
             // 5. inject target definition to project
             /* web app (this should already be in the project so don't add it):
@@ -222,7 +222,7 @@ namespace Wijits.FastKoala.Transformations
         private string GetBaseConfigPath()
         {
             var baseConfigPath = Project.GetConfigFile();
-            if (ProjectProperties.InlineTransformations == true)
+            if (ProjectProperties.InlineAppCfgTransforms == true)
             {
                 baseConfigPath = Path.Combine(Project.GetDirectory(), ProjectProperties.ConfigDir,
                     ProjectProperties.AppCfgType + "." + ProjectProperties.CfgBaseName + ".config");
@@ -502,7 +502,7 @@ namespace Wijits.FastKoala.Transformations
                 {
                     return false;
                 }
-                return ProjectProperties.BuildTimeTransformsEnabled;
+                return ProjectProperties.BuildTimeAppCfgTransformsEnabled;
             }
         }
 

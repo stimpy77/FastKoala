@@ -34,20 +34,22 @@ namespace Wijits.FastKoala.Utilities
             get { return Project.GetProjectRoot(); }
         }
 
-        public bool BuildTimeTransformsEnabled
+        public bool BuildTimeAppCfgTransformsEnabled
         {
-            get { return (GetPropertyValue("BuildTimeTransformsEnabled") ?? "").ToLower() == "true"; }
-            set { SetPropertyValue("BuildTimeTransformsEnabled", value.ToString().ToLower()); }
+            get { return (GetPropertyValue("BuildTimeAppCfgTransformsEnabled") ?? "").ToLower() == "true"; }
+            set { SetPropertyValue("BuildTimeAppCfgTransformsEnabled", value); }
         }
 
-        public void SetPropertyValue(string propertyName, string propertyValue, string condition = null)
+        public void SetPropertyValue(string propertyName, object propertyValue, string condition = null)
         {
             var existingProp = ProjectRoot.Properties.LastOrDefault(
                 p => p.Name == propertyName &&
                      ((condition == null && string.IsNullOrEmpty(p.Condition)) ||
                       (condition != null && p.Condition == condition)));
-            if (existingProp != null) existingProp.Value = propertyValue;
-            else ProjectRoot.AddProperty(propertyName, propertyValue);
+            if (propertyValue == null) propertyValue = "";
+            if (propertyValue is bool) propertyValue = propertyValue.ToString().ToLower();
+            if (existingProp != null) existingProp.Value = propertyValue.ToString();
+            else ProjectRoot.AddProperty(propertyName, propertyValue.ToString());
         }
 
         public string GetPropertyValue(string propertyName, string condition = null)
@@ -71,17 +73,17 @@ namespace Wijits.FastKoala.Utilities
             set { SetPropertyValue("ConfigDir", value); }
         }
 
-        public bool? InlineTransformations
+        public bool? InlineAppCfgTransforms
         {
             get
             {
-                var ret = GetPropertyValue("InlineTransformations");
+                var ret = GetPropertyValue("InlineAppCfgTransforms");
                 if (string.IsNullOrEmpty(ret)) return null;
                 return bool.Parse(ret);
             }
             set
             {
-                SetPropertyValue("InlineTransformations", value == null ? "" : value.ToString());
+                SetPropertyValue("InlineAppCfgTransforms", value);
             }
         }
 
