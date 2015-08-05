@@ -178,7 +178,9 @@
     <Compile Include="Transformations\ConfigDirPrompt.Designer.cs">
       <DependentUpon>ConfigDirPrompt.cs</DependentUpon>
     </Compile>
-    <Compile Include="Transformations\ConfigWatcher.cs" />
+    <Compile Include="Transformations\ConfigWatcher.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Utilities\FileUtilities.cs" />
     <Compile Include="Utilities\ProcessExtensions.cs" />
     <Compile Include="Utilities\ProjectProperties.cs" />
