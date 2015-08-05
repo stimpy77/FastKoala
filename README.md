@@ -83,13 +83,13 @@ So, the logic to find the base config file would be:
 * If the MSBuild property **InlineAppCfgTransforms** is not true (not if it is false, because if it is not true it probably doesn't exist so it would be null or empty string) then
     * the base config file is either App.config or Web.config
 * otherwise,
-    * the base config file is at $(ConfigDir)\$(AppCfgType).config
+    * the base config file is at $(ConfigDir)\$(AppCfgType).Base.config
 
 So, a complete path is built as an MSBuild property as such, which Fast Koala also adds as $(AppConfigBaseFileFullPath):
 
     <AppConfigBaseFileFullPath Condition="Exists('$(MSBuildProjectDirectory)\App.config')">$(MSBuildProjectDirectory)\App.config</AppConfigBaseFileFullPath>
     <AppConfigBaseFileFullPath Condition="Exists('$(MSBuildProjectDirectory)\Web.config')">$(MSBuildProjectDirectory)\Web.config</AppConfigBaseFileFullPath>
-    <AppConfigBaseFileFullPath Condition="'$(InlineAppCfgTransforms)' == 'true'">$(MSBuildProjectDirectory)\$(ConfigDir)\$(AppCfgType).config</AppConfigBaseFileFullPath>
+    <AppConfigBaseFileFullPath Condition="'$(InlineAppCfgTransforms)' == 'true'">$(MSBuildProjectDirectory)\$(ConfigDir)\$(AppCfgType).Base.config</AppConfigBaseFileFullPath>
 
 ### Development notes
 
