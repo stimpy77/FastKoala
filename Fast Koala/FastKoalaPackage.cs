@@ -180,7 +180,8 @@ namespace Wijits.FastKoala
                 {
                     if (!string.IsNullOrEmpty(baseFileFullPath) &&
                         baseFileFullPath != appConfigFileChangedEventArgs.AppConfigFile
-                        && DateTime.Now - _lastModifiedNotification > TimeSpan.FromSeconds(15))
+                        && DateTime.Now - _lastModifiedNotification > TimeSpan.FromSeconds(15)
+                        && File.ReadAllText(fileInfo.FullName).Replace("\r", "") != File.ReadAllText(baseFileFullPath).Replace("\r", ""))
                     {
                         var baseFileRelativePath = FileUtilities.GetRelativePath(
                             Directory.GetParent(project.GetDirectory()).FullName, baseFileFullPath, trimDotSlash: true);
