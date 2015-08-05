@@ -172,16 +172,19 @@ namespace Wijits.FastKoala
             var tmpBaseFileFullPath = Path.Combine(project.GetDirectory(),
                 projectProperties.ConfigDir, projectProperties.AppCfgType + ".Base.config");
             if (File.Exists(tmpBaseFileFullPath)) baseFileFullPath = tmpBaseFileFullPath;
+            lock (appConfigFileChangedMessageLock) { 
             if (!string.IsNullOrEmpty(baseFileFullPath) && baseFileFullPath != appConfigFileChangedEventArgs.AppConfigFile
                 && DateTime.Now - _lastModifiedNotification > TimeSpan.FromSeconds(15))
-            {
-                var baseFileRelativePath = FileUtilities.GetRelativePath(
-                    Directory.GetParent(project.GetDirectory()).FullName, baseFileFullPath, trimDotSlash: true);
-                _lastModifiedNotification = DateTime.Now;
-                MessageBox.Show(GetNativeWindow(), 
-                    "The " + fileInfo.Name + " file has been modified, but "
-                    + "this is a generated file. You will need to immediately identify the changes that were made and "
-                    + "propagate them over to " + baseFileRelativePath, fileInfo.Name, MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                {
+                    var baseFileRelativePath = FileUtilities.GetRelativePath(
+                        Directory.GetParent(project.GetDirectory()).FullName, baseFileFullPath, trimDotSlash: true);
+                    MessageBox.Show(GetNativeWindow(), 
+                        "The " + fileInfo.Name + " file has been modified, but "
+                        + "this is a generated file. You will need to immediately identify the changes that were made and "
+                        + "propagate them over to " + baseFileRelativePath, fileInfo.Name, MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                    _lastModifiedNotification = DateTime.Now;
+                    Dte.ExecuteCommand("Tools.DiffFiles", "\"" + fileInfo.FullName + "\" \"" + baseFileFullPath + "\"");
+                }
             }
         }
 
