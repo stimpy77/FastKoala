@@ -161,31 +161,45 @@ namespace Wijits.FastKoala
         private object appConfigFileChangedMessageLock = new object();
         private void OnAppConfigFileChanged(object sender, AppConfigFileChangedEventArgs appConfigFileChangedEventArgs)
         {
-            var project = appConfigFileChangedEventArgs.Project;
-            if (!project.IsAvailable()) return;
-            var fileInfo = new FileInfo(appConfigFileChangedEventArgs.AppConfigFile);
-            var projectProperties = new ProjectProperties(project);
-            if (projectProperties.InlineAppCfgTransforms != true)
-                return;
-            var baseFileFullPath = appConfigFileChangedEventArgs.AppConfigFile;
-            // $(MSBuildProjectDirectory)\$(ConfigDir)\$(AppCfgType).Base.config
-            var tmpBaseFileFullPath = Path.Combine(project.GetDirectory(),
-                projectProperties.ConfigDir, projectProperties.AppCfgType + ".Base.config");
-            if (File.Exists(tmpBaseFileFullPath)) baseFileFullPath = tmpBaseFileFullPath;
-            lock (appConfigFileChangedMessageLock) { 
-            if (!string.IsNullOrEmpty(baseFileFullPath) && baseFileFullPath != appConfigFileChangedEventArgs.AppConfigFile
-                && DateTime.Now - _lastModifiedNotification > TimeSpan.FromSeconds(15))
+//#if !DEBUG
+            try
+            {
+//#endif
+                var project = appConfigFileChangedEventArgs.Project;
+                if (!project.IsAvailable()) return;
+                var fileInfo = new FileInfo(appConfigFileChangedEventArgs.AppConfigFile);
+                var projectProperties = new ProjectProperties(project);
+                if (projectProperties.InlineAppCfgTransforms != true)
+                    return;
+                var baseFileFullPath = appConfigFileChangedEventArgs.AppConfigFile;
+                // $(MSBuildProjectDirectory)\$(ConfigDir)\$(AppCfgType).Base.config
+                var tmpBaseFileFullPath = Path.Combine(project.GetDirectory(),
+                    projectProperties.ConfigDir, projectProperties.AppCfgType + ".Base.config");
+                if (File.Exists(tmpBaseFileFullPath)) baseFileFullPath = tmpBaseFileFullPath;
+                lock (appConfigFileChangedMessageLock)
                 {
-                    var baseFileRelativePath = FileUtilities.GetRelativePath(
-                        Directory.GetParent(project.GetDirectory()).FullName, baseFileFullPath, trimDotSlash: true);
-                    MessageBox.Show(GetNativeWindow(), 
-                        "The " + fileInfo.Name + " file has been modified, but "
-                        + "this is a generated file. You will need to immediately identify the changes that were made and "
-                        + "propagate them over to " + baseFileRelativePath, fileInfo.Name, MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                    _lastModifiedNotification = DateTime.Now;
-                    Dte.ExecuteCommand("Tools.DiffFiles", "\"" + fileInfo.FullName + "\" \"" + baseFileFullPath + "\"");
+                    if (!string.IsNullOrEmpty(baseFileFullPath) &&
+                        baseFileFullPath != appConfigFileChangedEventArgs.AppConfigFile
+                        && DateTime.Now - _lastModifiedNotification > TimeSpan.FromSeconds(15))
+                    {
+                        var baseFileRelativePath = FileUtilities.GetRelativePath(
+                            Directory.GetParent(project.GetDirectory()).FullName, baseFileFullPath, trimDotSlash: true);
+                        MessageBox.Show(GetNativeWindow(),
+                            "The " + fileInfo.Name + " file has been modified, but "
+                            + "this is a generated file. You will need to immediately identify the changes that were made and "
+                            + "propagate them over to " + baseFileRelativePath, fileInfo.Name, MessageBoxButtons.OK,
+                            MessageBoxIcon.Exclamation);
+                        _lastModifiedNotification = DateTime.Now;
+                        Dte.ExecuteCommand("Tools.DiffFiles", "\"" + fileInfo.FullName + "\" \"" + baseFileFullPath + "\"");
+                    }
                 }
+//#if !DEBUG
             }
+            catch (Exception e)
+            {
+                Dte.GetLogger().LogError(e.StackTrace);
+            }
+//#endif
         }
 
         private void OnBeforeCloseProject(object sender, BeforeCloseProjectEventArgs beforeCloseProjectEventArgs)
