@@ -14,7 +14,7 @@ namespace Wijits.FastKoala.Utilities
         private const int FILE_ATTRIBUTE_NORMAL = 0x80;
         // ReSharper enable InconsistentNaming
 
-        public static string GetRelativePath(string fromPath, string toPath)
+        public static string GetRelativePath(string fromPath, string toPath, bool trimDotSlash = false)
         {
             var fromAttr = GetPathAttribute(fromPath);
             var toAttr = GetPathAttribute(toPath);
@@ -29,7 +29,10 @@ namespace Wijits.FastKoala.Utilities
             {
                 throw new ArgumentException("Paths must have a common prefix");
             }
-            return path.ToString();
+            var result = path.ToString();
+            if (trimDotSlash && result.StartsWith(".\\"))
+                result = result.Substring(2);
+            return result;
         }
 
         [DllImport("shlwapi.dll", SetLastError = true)]

@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -12,6 +14,7 @@ using EnvDTE;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Wijits.FastKoala.Events;
 using Wijits.FastKoala.Logging;
 using Wijits.FastKoala.SourceControl;
 using Wijits.FastKoala.Transformations;
@@ -42,6 +45,9 @@ namespace Wijits.FastKoala
     public sealed class FastKoalaPackage : Package
     {
         private DocumentEvents _documentEvents;
+        private BuildEvents _buildEvents;
+        private SolutionEventsWrapper _solutionEventsHandler;
+        private uint _solutionEventsCookie;
 
         /////////////////////////////////////////////////////////////////////////////
         // Overridden Package Implementation
@@ -94,6 +100,110 @@ namespace Wijits.FastKoala
         {
             (_documentEvents ?? (_documentEvents = Dte.Events.DocumentEvents))
                 .DocumentOpened += OnDocumentOpened;
+            
+            (_buildEvents ?? (_buildEvents = Dte.Events.BuildEvents))
+                .OnBuildBegin += BuildEventsOnOnBuildBegin;
+            _buildEvents.OnBuildDone += BuildEventsOnOnBuildDone;
+            (_solutionEvents ?? (_solutionEvents = Dte.Events.SolutionEvents))
+                .ProjectRenamed += OnProjectRenamed;
+
+            // credit: http://www.mztools.com/articles/2014/MZ2014024.aspx
+            var _solution = base.GetService(typeof(SVsSolution)) as IVsSolution;
+            if (_solution != null)
+            {
+                _solutionEventsHandler = new SolutionEventsWrapper();
+                _solution.AdviseSolutionEvents(_solutionEventsHandler, out _solutionEventsCookie);
+
+                _solutionEventsHandler.AfterLoadProject += OnAfterLoadProject;
+                _solutionEventsHandler.AfterOpenProject += OnAfterOpenProject;
+                _solutionEventsHandler.BeforeCloseProject += OnBeforeCloseProject;
+            }
+        }
+
+        private void OnAfterLoadProject(object sender, AfterLoadProjectEventArgs afterLoadProjectEventArgs)
+        {
+            var project = afterLoadProjectEventArgs.Project;
+            MonitorConfigFileChanges(project);
+        }
+
+        private void OnProjectRenamed(Project project, string oldName)
+        {
+            if (_configWatchers.ContainsKey(oldName))
+            {
+                var cfgwatcher = _configWatchers[oldName];
+                cfgwatcher.Dispose();
+                _configWatchers.Remove(oldName);
+                _configWatchers[project.Name] = new ConfigWatcher(project);
+            }
+        }
+
+        Dictionary<string, ConfigWatcher> _configWatchers
+            = new Dictionary<string, ConfigWatcher>();
+
+        private SolutionEvents _solutionEvents;
+        private DateTime _lastModifiedNotification;
+
+        private void OnAfterOpenProject(object sender, AfterOpenProjectEventArgs afterOpenProjectEventArgs)
+        {
+            var project = afterOpenProjectEventArgs.Project;
+            MonitorConfigFileChanges(project);
+        }
+
+        private void MonitorConfigFileChanges(Project project)
+        {
+            var projectName = project.Name;
+            if (_configWatchers.ContainsKey(projectName)) return;
+            var configWatcher = new ConfigWatcher(project);
+            _configWatchers[projectName] = configWatcher;
+            configWatcher.AppConfigFileChanged += OnAppConfigFileChanged;
+        }
+
+        private object appConfigFileChangedMessageLock = new object();
+        private void OnAppConfigFileChanged(object sender, AppConfigFileChangedEventArgs appConfigFileChangedEventArgs)
+        {
+            var project = appConfigFileChangedEventArgs.Project;
+            if (!project.IsAvailable()) return;
+            var fileInfo = new FileInfo(appConfigFileChangedEventArgs.AppConfigFile);
+            var projectProperties = new ProjectProperties(project);
+            if (projectProperties.InlineAppCfgTransforms != true)
+                return;
+            var baseFileFullPath = appConfigFileChangedEventArgs.AppConfigFile;
+            // $(MSBuildProjectDirectory)\$(ConfigDir)\$(AppCfgType).Base.config
+            var tmpBaseFileFullPath = Path.Combine(project.GetDirectory(),
+                projectProperties.ConfigDir, projectProperties.AppCfgType + ".Base.config");
+            if (File.Exists(tmpBaseFileFullPath)) baseFileFullPath = tmpBaseFileFullPath;
+            if (!string.IsNullOrEmpty(baseFileFullPath) && baseFileFullPath != appConfigFileChangedEventArgs.AppConfigFile
+                && DateTime.Now - _lastModifiedNotification > TimeSpan.FromSeconds(15))
+            {
+                var baseFileRelativePath = FileUtilities.GetRelativePath(
+                    Directory.GetParent(project.GetDirectory()).FullName, baseFileFullPath, trimDotSlash: true);
+                _lastModifiedNotification = DateTime.Now;
+                MessageBox.Show(GetNativeWindow(), 
+                    "The " + fileInfo.Name + " file has been modified, but "
+                    + "this is a generated file. You will need to immediately identify the changes that were made and "
+                    + "propagate them over to " + baseFileRelativePath, fileInfo.Name, MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+            }
+        }
+
+        private void OnBeforeCloseProject(object sender, BeforeCloseProjectEventArgs beforeCloseProjectEventArgs)
+        {
+            var project = beforeCloseProjectEventArgs.Project;
+            var projectName = project.Name;
+            if (_configWatchers.ContainsKey(projectName))
+            {
+                _configWatchers[projectName].Dispose();
+                _configWatchers.Remove(projectName);
+            }
+        }
+
+        private void BuildEventsOnOnBuildBegin(vsBuildScope scope, vsBuildAction action)
+        {
+            _configWatchers.ToList().ForEach(kvp=>kvp.Value.IsBuilding = true);
+        }
+
+        private void BuildEventsOnOnBuildDone(vsBuildScope scope, vsBuildAction action)
+        {
+            _configWatchers.ToList().ForEach(kvp => kvp.Value.IsBuilding = false);
         }
 
         private async void OnDocumentOpened(Document document)
@@ -140,7 +250,7 @@ namespace Wijits.FastKoala
 
         private IWin32Window GetNativeWindow()
         {
-            return NativeWindow.FromHandle(new IntPtr(Dte.MainWindow.HWnd));
+            return NativeWindow.FromHandle(System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle);
         }
 
         private DTE Dte

@@ -7,6 +7,7 @@ using System.Xml;
 using EnvDTE;
 using EnvDTE80;
 using Microsoft.Build.Construction;
+using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
 
 namespace Wijits.FastKoala.Utilities
@@ -164,6 +165,31 @@ namespace Wijits.FastKoala.Utilities
             var aggregatableProject = (IVsAggregatableProject)hierarchy;
             aggregatableProject.GetAggregateProjectTypeGuids(out projectTypeGuids);
             return projectTypeGuids;
+        }
+
+        // credit: https://mhusseini.wordpress.com/2012/09/28/convert-ivshierarchy-to-projectitem-or-project/
+        public static EnvDTE.Project GetDteProject(this IVsHierarchy vsHierarchy)
+        {
+            // VSITEMID_ROOT gets the current project. 
+            var itemid = VSConstants.VSITEMID_ROOT;
+            object objProj;
+            vsHierarchy.GetProperty(itemid, (int)__VSHPROPID.VSHPROPID_ExtObject, out objProj);
+            return objProj as EnvDTE.Project;
+        }
+
+        public static bool IsAvailable(this EnvDTE.Project project)
+        {
+            // test for project availability
+            var isAvailable = true;
+            try
+            {
+                project.Properties.Cast<Property>().ToList().ForEach(p => { });
+            }
+            catch
+            {
+                isAvailable = false;
+            }
+            return isAvailable;
         }
     }
 }
