@@ -21,6 +21,7 @@ namespace Wijits.FastKoala.Transformations
         private Project _project;
         private bool _isBuilding;
         private DateTime _buildingTimeout = DateTime.MinValue;
+        private DateTime _initialSetupTime = DateTime.Now;
 
         public ConfigWatcher(Project project)
         {
@@ -40,6 +41,7 @@ namespace Wijits.FastKoala.Transformations
         {
             if (_project == null) return;
             if (IsBuilding) return;
+            if (DateTime.Now - _initialSetupTime < TimeSpan.FromSeconds(5)) return;
             if (AppConfigFileChanged != null)
             {
                 AppConfigFileChanged(_project, new AppConfigFileChangedEventArgs(_project, fileSystemEventArgs.FullPath));
