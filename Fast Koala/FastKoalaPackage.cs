@@ -48,6 +48,9 @@ namespace Wijits.FastKoala
         private BuildEvents _buildEvents;
         private SolutionEventsWrapper _solutionEventsHandler;
         private uint _solutionEventsCookie;
+        private bool shownErrorMsg = false;
+
+        public const string FastKoalaMaintainerEmail = "jon@wijits.com";
 
         /////////////////////////////////////////////////////////////////////////////
         // Overridden Package Implementation
@@ -322,38 +325,49 @@ namespace Wijits.FastKoala
         /// <param name="e"></param>
         private async void EnableBuildTimeTransformationsMenuItem_BeforeQueryStatus(object sender, EventArgs e)
         {
-            // get the menu that fired the event
-            var menuCommand = sender as OleMenuCommand;
-            if (menuCommand == null) return;
+            try
+            {
+                // get the menu that fired the event
+                var menuCommand = sender as OleMenuCommand;
+                if (menuCommand == null) return;
 
-            // start by assuming that the menu will not be shown
-            menuCommand.Visible = false;
-            menuCommand.Enabled = false;
+                // start by assuming that the menu will not be shown
+                menuCommand.Visible = false;
+                menuCommand.Enabled = false;
 
-            IVsHierarchy hierarchy = null;
-            var itemid = VSConstants.VSITEMID_NIL;
+                IVsHierarchy hierarchy = null;
+                uint itemid;
 
-            if (!IsSingleProjectItemSelection(out hierarchy, out itemid)) return;
-            // Get the file path
-            string itemFullPath = null;
-            ((IVsProject)hierarchy).GetMkDocument(itemid, out itemFullPath);
-            var transformFileInfo = new FileInfo(itemFullPath);
+                if (!IsSingleProjectItemSelection(out hierarchy, out itemid)) return;
+                // Get the file path
+                string itemFullPath = null;
+                ((IVsProject) hierarchy).GetMkDocument(itemid, out itemFullPath);
+                var transformFileInfo = new FileInfo(itemFullPath);
 
-            // then check if the file is named 'web.config'
-            var isConfig = Regex.IsMatch(transformFileInfo.Name, @"[Web|App](\.\w+)?\.config",
-                RegexOptions.IgnoreCase);
+                // then check if the file is named 'web.config'
+                var isConfig = Regex.IsMatch(transformFileInfo.Name, @"[Web|App](\.\w+)?\.config",
+                    RegexOptions.IgnoreCase);
 
-            // if not leave the menu hidden
-            if (!isConfig) return;
-            var project = GetSelectedProject();
-            if (project == null) return;
+                // if not leave the menu hidden
+                if (!isConfig) return;
+                var project = GetSelectedProject();
+                if (project == null) return;
 
-            var transformationsEnabler = await GetTransformationsEnabler(project);
-            if (!transformationsEnabler.CanEnableBuildTimeTransformations)
-                return;
+                var transformationsEnabler = await GetTransformationsEnabler(project);
+                if (!transformationsEnabler.CanEnableBuildTimeTransformations)
+                    return;
 
-            menuCommand.Visible = true;
-            menuCommand.Enabled = true;
+                menuCommand.Visible = true;
+                menuCommand.Enabled = true;
+            }
+            catch (Exception exception)
+            {
+#if DEBUG
+                // what the heck just happened?
+                if (System.Diagnostics.Debugger.IsAttached) throw;
+#endif
+                LogAndPromptUnhandledError(exception);
+            }
         }
 
         /// <summary>
@@ -363,22 +377,34 @@ namespace Wijits.FastKoala
         /// <param name="e"></param>
         private async void EnableBuildTimeTransformationsMenuItemProject_BeforeQueryStatus(object sender, EventArgs e)
         {
-            // get the menu that fired the event
-            var menuCommand = sender as OleMenuCommand;
-            if (menuCommand == null) return;
+            try
+            {
+                // get the menu that fired the event
+                var menuCommand = sender as OleMenuCommand;
+                if (menuCommand == null) return;
 
-            menuCommand.Visible = false;
-            menuCommand.Enabled = false;
+                menuCommand.Visible = false;
+                menuCommand.Enabled = false;
 
-            var project = GetSelectedProject();
-            if (project == null) return;
+                var project = GetSelectedProject();
+                if (project == null) return;
 
-            var transformationsEnabler = await GetTransformationsEnabler(project);
-            if (!transformationsEnabler.CanEnableBuildTimeTransformations)
-                return;
+                var transformationsEnabler = await GetTransformationsEnabler(project);
+                if (!transformationsEnabler.CanEnableBuildTimeTransformations)
+                    return;
 
-            menuCommand.Visible = true;
-            menuCommand.Enabled = true;
+                menuCommand.Visible = true;
+                menuCommand.Enabled = true;
+
+            }
+            catch (Exception exception)
+            {
+#if DEBUG
+                // what the heck just happened?
+                if (System.Diagnostics.Debugger.IsAttached) throw;
+#endif
+                LogAndPromptUnhandledError(exception);
+            }
         }
 
         /// <summary>
@@ -393,11 +419,13 @@ namespace Wijits.FastKoala
             {
                 await transformationsEnabler.EnableBuildTimeConfigTransformations();
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                Dte.GetLogger().LogError(ex.ToString());
-                MessageBox.Show(GetNativeWindow(), "An unexpected error occurred. Please report the Output window logs."
-                    + "\r\n\r\n" + ex.Message, "Fast Koala", MessageBoxButtons.OK, MessageBoxIcon.Error);
+#if DEBUG
+                // what the heck just happened?
+                if (System.Diagnostics.Debugger.IsAttached) throw;
+#endif
+                LogAndPromptUnhandledError(exception);
             }
         }
 
@@ -407,6 +435,7 @@ namespace Wijits.FastKoala
 
         private async void AddMissingTransformationsMenuItem_BeforeQueryStatus(object sender, EventArgs e)
         {
+            try { 
             // get the menu that fired the event
             var menuCommand = sender as OleMenuCommand;
             if (menuCommand == null) return;
@@ -439,14 +468,35 @@ namespace Wijits.FastKoala
                 menuCommand.Visible = true;
                 menuCommand.Enabled = true;
             }
+
+            }
+            catch (Exception exception)
+            {
+#if DEBUG
+                // what the heck just happened?
+                if (System.Diagnostics.Debugger.IsAttached) throw;
+#endif
+                LogAndPromptUnhandledError(exception);
+            }
         }
 
         private async void AddMissingTransformationsMenuItem_Invoke(object sender, EventArgs e)
         {
-            var project = GetSelectedProject();
-            if (project == null) return;
-            var transformationsEnabler = await GetTransformationsEnabler(project);
-            await transformationsEnabler.AddMissingTransforms();
+            try
+            {
+                var project = GetSelectedProject();
+                if (project == null) return;
+                var transformationsEnabler = await GetTransformationsEnabler(project);
+                await transformationsEnabler.AddMissingTransforms();
+            }
+            catch (Exception exception)
+            {
+#if DEBUG
+                // what the heck just happened?
+                if (System.Diagnostics.Debugger.IsAttached) throw;
+#endif
+                LogAndPromptUnhandledError(exception);
+            }
         }
 
 #endregion
@@ -512,6 +562,22 @@ namespace Wijits.FastKoala
                     Marshal.Release(hierarchyPtr);
                 }
             }
+        }
+
+        private void LogAndPromptUnhandledError(Exception exception)
+        {
+            var logger = Dte.GetLogger();
+            logger.LogError("Unhandled " + exception.GetType().Name + " (" + exception.GetType().FullName + "):\r\n"
+                + exception.StackTrace
+                + "\r\nPlease forward this log to " + FastKoalaMaintainerEmail);
+            if (shownErrorMsg) return;
+            shownErrorMsg = true;
+            var response = MessageBox.Show(GetNativeWindow(),
+                "Uh, something weird happened in Fast Koala, might you please do us all a favor and send the "
+                + "contents of the output window to " + FastKoalaMaintainerEmail + "?", "Fast Koala", MessageBoxButtons.YesNo,
+                MessageBoxIcon.Error);
+            logger.LogInfo("[Your response: '" + response.ToString() + "'] .. " 
+                + (response == DialogResult.No ? "*snif*" : "Thanks"));
         }
     }
 }
