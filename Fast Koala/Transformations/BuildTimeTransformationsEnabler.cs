@@ -38,14 +38,14 @@ namespace Wijits.FastKoala.Transformations
         {
             if (!CanEnableBuildTimeTransformations) return false;
 
-            var message = "Are you sure you want to enable build-time transformations?";
-            var title = "Enable build-time transformations? (Confirmation)";
+            var message = "Are you sure you want to enable build-time config transformations? This will introduce changes to your project file.";
+            var title = "Enable build-time config transformations? (Confirmation)";
             if (ProjectIsWebType || ProjectLooksLikeClickOnce)
             {
                 title = "Enable inline build-time transformations? (Confirmation)";
                 message = "This action will cause your " + (ProjectProperties.AppCfgType ?? DetermineAppCfgType())
                           + ".config to be regenerated in your design-time environment every time you build. "
-                          + "Are you sure you want to enable inline build-time transformations?";
+                          + "Are you sure you want to enable inline build-time config transformations? Doing so will introduce changes to your project file.";
             }
             var dialogResult = MessageBox.Show(_ownerWindow,
                 message, title, MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
@@ -203,18 +203,19 @@ namespace Wijits.FastKoala.Transformations
 
             var appcfgtype = ProjectProperties.AppCfgType;
             var cfgfilename = appcfgtype + ".config";
-            var baseConfigFile = Path.Combine(Project.GetDirectory(), cfgfilename);
+            var baseConfigFileFullPath = Path.Combine(Project.GetDirectory(), cfgfilename);
+            var baseConfigFileRelPath = FileUtilities.GetRelativePath(Project.GetDirectory(), baseConfigFileFullPath);
             if (string.IsNullOrEmpty(Project.GetConfigFile()))
             {
-                baseConfigFile = Path.Combine(Project.GetDirectory(), ProjectProperties.AppCfgType + ".config");
-                FileUtilities.WriteFileFromAssemblyResourceManifest(@"Transforms\{0}.config", appcfgtype, "App", baseConfigFile);
+                baseConfigFileFullPath = Path.Combine(Project.GetDirectory(), ProjectProperties.AppCfgType + ".config");
+                FileUtilities.WriteFileFromAssemblyResourceManifest(@"Transforms\{0}.config", appcfgtype, "App", baseConfigFileFullPath);
                 if (await _io.ItemIsUnderSourceControl(Project.FullName))
                 {
-                    await _io.Add(baseConfigFile);
+                    await _io.Add(baseConfigFileFullPath);
                 }
-                AddItemToProject(baseConfigFile);
+                AddItemToProject(baseConfigFileRelPath);
             }
-            await AddMissingTransforms(baseConfigFile);
+            await AddMissingTransforms(baseConfigFileFullPath);
 
             return true;
         }
@@ -243,22 +244,20 @@ namespace Wijits.FastKoala.Transformations
             {
                 var cfgname = cfg.ConfigurationName;
                 var xfrmname = appcfgtype + "." + cfgname + ".config";
-                var xfrmpath =
-                    Path.Combine(FileUtilities.GetRelativePath(Project.GetDirectory(), baseFileInfo.DirectoryName),
-                        xfrmname);
-                if (xfrmpath.StartsWith(".\\")) xfrmpath = xfrmpath.Substring(2);
-                var xfrmfullpath = Path.Combine(Project.GetDirectory(), xfrmpath);
-                if (!File.Exists(xfrmfullpath))
+                var xfrmFullPath = 
+                    Path.Combine(Project.GetDirectory(), baseFileInfo.DirectoryName, xfrmname);
+                var xfrmRelPath = FileUtilities.GetRelativePath(Project.GetDirectory(), xfrmFullPath);
+                if (!File.Exists(xfrmFullPath))
                 {
-                    _logger.LogInfo("Creating " + xfrmpath);
-                    FileUtilities.WriteFileFromAssemblyResourceManifest(@"Transforms\Web.{0}.config", cfgname, "Release", xfrmfullpath);
+                    _logger.LogInfo("Creating " + xfrmRelPath);
+                    FileUtilities.WriteFileFromAssemblyResourceManifest(@"Transforms\Web.{0}.config", cfgname, "Release", xfrmFullPath);
                     if (await _io.ItemIsUnderSourceControl(Project.FullName))
                     {
-                        await _io.Add(xfrmfullpath);
+                        await _io.Add(xfrmFullPath);
                     }
                 }
-                var projectItem = Project.GetProjectRoot().Items.SingleOrDefault(item => item.Include == xfrmpath)
-                                  ?? AddItemToProject(xfrmpath);
+                var projectItem = Project.GetProjectRoot().Items.SingleOrDefault(item => item.Include == xfrmRelPath)
+                                  ?? AddItemToProject(xfrmRelPath);
                 // ReSharper disable once SimplifyLinqExpression
                 if (!projectItem.HasMetadata ||
                     !projectItem.Metadata.Any(m => m.Name == "DependentUpon"))
@@ -559,7 +558,6 @@ namespace Wijits.FastKoala.Transformations
                                                           + ".config");
                     if (!File.Exists(cfgfile)) return true;
                     var relativePath = FileUtilities.GetRelativePath(Project.GetDirectory(), cfgfile);
-                    if (relativePath.StartsWith(".\\")) relativePath = relativePath.Substring(2);
                     if (Project.GetProjectRoot().Items.SingleOrDefault(item => item.Include == relativePath) == null)
                     {
                         return true;

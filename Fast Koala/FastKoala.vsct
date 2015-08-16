@@ -83,7 +83,7 @@
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>DynamicVisibility</CommandFlag>
         <Strings>
-          <ButtonText>Enable build-time transformations</ButtonText>
+          <ButtonText>Enable build-time config transformations</ButtonText>
         </Strings>
       </Button>
 

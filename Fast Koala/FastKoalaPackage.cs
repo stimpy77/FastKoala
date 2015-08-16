@@ -238,7 +238,9 @@ namespace Wijits.FastKoala
                 {
                     var transforms = await GetTransformationsEnabler(project);
                     var properties = transforms.ProjectProperties;
-                    if (transforms.HasBuildTimeTransformationsEnabled && properties.InlineAppCfgTransforms == true && fileInfo.Name.ToLower() == properties.AppCfgType.ToLower() + ".config")
+                    if (transforms.HasBuildTimeTransformationsEnabled && 
+                        properties.InlineAppCfgTransforms == true &&
+                        fileInfo.Name.ToLower() == properties.AppCfgType.ToLower() + ".config")
                     {
                         document.ReadOnly = true;
                     }

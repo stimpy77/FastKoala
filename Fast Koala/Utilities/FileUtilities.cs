@@ -14,7 +14,7 @@ namespace Wijits.FastKoala.Utilities
         private const int FILE_ATTRIBUTE_NORMAL = 0x80;
         // ReSharper enable InconsistentNaming
 
-        public static string GetRelativePath(string fromPath, string toPath, bool trimDotSlash = false)
+        public static string GetRelativePath(string fromPath, string toPath, bool trimDotSlash = true)
         {
             var fromAttr = GetPathAttribute(fromPath);
             var toAttr = GetPathAttribute(toPath);
@@ -53,7 +53,10 @@ namespace Wijits.FastKoala.Utilities
                 return FILE_ATTRIBUTE_NORMAL;
             }
 
-            throw new FileNotFoundException();
+            // ReSharper disable once StringLastIndexOfIsCultureSpecific.1
+            if (path.LastIndexOf(Path.DirectorySeparatorChar) < path.LastIndexOf("."))
+                return FILE_ATTRIBUTE_NORMAL;
+            return FILE_ATTRIBUTE_DIRECTORY;
         }
 
         public static bool ExistsOnPath(string fileName)
