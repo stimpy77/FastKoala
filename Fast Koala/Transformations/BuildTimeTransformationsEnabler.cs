@@ -147,12 +147,12 @@ namespace Wijits.FastKoala.Transformations
             trWeb.SetParameter("Transform", @"$(ConfigDir)\Web.$(Configuration).config");
             trWeb.SetParameter("Destination", @"Web.config");
             var trClickOnce = transformOnBuildTarget.AddTask("TransformXml");
-            trClickOnce.Condition = "'$(AppCfgType)' == 'App' and $(InlineTransformations) == true";
+            trClickOnce.Condition = "'$(AppCfgType)' == 'App' and $(InlineAppCfgTransforms) == true";
             trClickOnce.SetParameter("Source", @"$(ConfigDir)\App.Base.config");
             trClickOnce.SetParameter("Transform", @"$(ConfigDir)\App.$(Configuration).config");
             trClickOnce.SetParameter("Destination", @"App.config");
             var trBinOut = transformOnBuildTarget.AddTask("TransformXml");
-            trBinOut.Condition = "'$(AppCfgType)' == 'App' and $(InlineTransformations) != true";
+            trBinOut.Condition = "'$(AppCfgType)' == 'App' and $(InlineAppCfgTransforms) != true";
             trBinOut.SetParameter("Source", @"App.config");
             trBinOut.SetParameter("Transform", @"App.$(Configuration).config");
             trBinOut.SetParameter("Destination", @"$(OutDir)$(AssemblyName).$(outputTypeExtension).config");
