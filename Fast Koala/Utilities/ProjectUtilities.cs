@@ -126,11 +126,31 @@ namespace Wijits.FastKoala.Utilities
             var projectUniqueName = project.UniqueName;
             var projectFullPath = (new FileInfo(project.FullName).FullName);
             project.Select();
-            dte.UnloadProject(project);
+            var unloaded = false;
+            try
+            {
+                dte.UnloadProject(project);
+                unloaded = true;
+            }
+            catch
+            {
+                project = dte.ReloadSolutionAndReturnProject(project);
+                try
+                {
+                    dte.UnloadProject(project);
+                    unloaded = true;
+                }
+                catch
+                {
+                    unloaded = false;
+                }
+            }
             await SaveProjectRoot(dte, projectFullPath);
             try
             {
-                dte.ReloadJustUnloadedProject();
+                if (unloaded)
+                    dte.ReloadJustUnloadedProject();
+                else dte.ReloadProject(project);
             }
             catch
             {
