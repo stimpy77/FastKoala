@@ -56,9 +56,9 @@ namespace Wijits.FastKoala.SourceControl
 
             var tfs = new TfsExeWrapper(project.GetDirectory(), VsEnvironment.Dte.GetLogger());
             if (await tfs.ItemIsUnderSourceControl(project.FullName)) return "tfs";
-            return //await DetectSccSystem(project.GetDirectory())
-                //?? 
-                await DetectSccSystem(project.DTE.Solution.GetDirectory());
+            var sccdir = project.DTE.Solution.GetDirectory();
+            if (string.IsNullOrEmpty(sccdir)) sccdir = project.GetDirectory();
+            return await DetectSccSystem(sccdir);
         }
 
         private static async Task<string> DetectSccSystem(string directory)

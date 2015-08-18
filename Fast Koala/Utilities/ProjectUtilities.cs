@@ -40,7 +40,9 @@ namespace Wijits.FastKoala.Utilities
 
         public static string GetDirectory(this Solution solution)
         {
-            return Directory.GetParent(solution.FullName).FullName;
+            return string.IsNullOrEmpty(solution.FullName) 
+                ? solution.FullName 
+                : Directory.GetParent(solution.FullName).FullName;
         }
 
         public static bool IsSourceControlled(this Solution solution)
