@@ -144,6 +144,9 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BuildScriptSupport\BuildScriptSupportInjector.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Events\AfterLoadProjectEventArgs.cs" />
     <Compile Include="Events\AfterOpenProjectEventArgs.cs" />
     <Compile Include="Events\AfterOpenSolutionEventArgs.cs" />
