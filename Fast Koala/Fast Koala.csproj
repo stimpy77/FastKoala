@@ -182,6 +182,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Utilities\FileUtilities.cs" />
+    <Compile Include="Utilities\IdioticProjectUnloaderBecauseMicrosoftsVSSDKIsntStable.cs" />
     <Compile Include="Utilities\ProcessExtensions.cs" />
     <Compile Include="Utilities\ProjectProperties.cs" />
     <Compile Include="Utilities\ProjectTypes.cs" />

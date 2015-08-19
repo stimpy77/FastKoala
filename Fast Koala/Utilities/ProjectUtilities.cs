@@ -121,44 +121,14 @@ namespace Wijits.FastKoala.Utilities
 
         public static async Task SaveProjectRoot(this Project project)
         {
-            var dte = project.DTE;
-            var projectName = project.Name;
-            var projectUniqueName = project.UniqueName;
-            var projectFullPath = (new FileInfo(project.FullName).FullName);
-            project.Select();
-            var unloaded = false;
-            try
+            var projectFullPath = (new FileInfo(project.FullName).FullName); // get Windows-"formal" abs path
+            using (new IdioticProjectUnloaderBecauseMicrosoftsVSSDKIsntStable(project))
             {
-                dte.UnloadProject(project);
-                unloaded = true;
-            }
-            catch
-            {
-                project = dte.ReloadSolutionAndReturnProject(project);
-                try
-                {
-                    dte.UnloadProject(project);
-                    unloaded = true;
-                }
-                catch
-                {
-                    unloaded = false;
-                }
-            }
-            await SaveProjectRoot(dte, projectFullPath);
-            try
-            {
-                if (unloaded)
-                    dte.ReloadJustUnloadedProject();
-                else dte.ReloadProject(project);
-            }
-            catch
-            {
-                dte.ReloadSolutionAndReturnProject(projectName, projectUniqueName);
+                await SaveProjectRoot(projectFullPath);
             }
         }
 
-        public static async Task SaveProjectRoot(DTE dte, string projectFullName)
+        public static async Task SaveProjectRoot(string projectFullName)
         {
             var projectFullPath = (new FileInfo(projectFullName).FullName);
             ProjectRootElement root;
@@ -170,7 +140,7 @@ namespace Wijits.FastKoala.Utilities
                 }
                 root = LoadedProjectRoots[projectFullPath];
             }
-            await dte.CheckOutFileForEditIfSourceControlled(projectFullPath);
+            await VsEnvironment.Dte.CheckOutFileForEditIfSourceControlled(projectFullPath);
             root.Save(projectFullPath);
         }
 
