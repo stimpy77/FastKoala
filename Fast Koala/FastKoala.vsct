@@ -49,9 +49,14 @@
       <Group guid="guidFastKoalaProjMenuCmdSet" id="FastKoalaProjMenu" priority="0x0600">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_PROJNODE"/>
       </Group>
+      
+      <Group guid="guidFastKoalaProjAddCmdSet" id="grpIdProjectContextAdd">
+        <Parent guid="guidSHLMainMenu" id="cmdidShellWindowNavigate7" />
+      </Group>
 
-
-
+      <Group guid="guidFastKoalaProjAddCmdSet" id="grpIdFastKoalaAddBuildScript">
+        <Parent guid="guidFastKoalaProjAddCmdSet" id="mnuFastKoalaProjAddMenu" />
+      </Group>
     </Groups>
     
     <!--Buttons section. -->
@@ -97,9 +102,25 @@
         </Strings>
       </Button>
 
-
+      <Button guid="guidFastKoalaProjAddCmdSet"
+              id="cmdIdFastKoalaAddPowerShellScript" priority="0x1100" type="Button">
+        <Parent guid="guidFastKoalaProjAddCmdSet" id="grpIdFastKoalaAddBuildScript" />
+        <Strings>
+          <ButtonText>PowerShell Script (.ps1)</ButtonText>
+        </Strings>
+      </Button>
 
     </Buttons>
+
+    <Menus>
+      <Menu guid="guidFastKoalaProjAddCmdSet" id="mnuFastKoalaProjAddMenu" priority="0x1100" type="Menu">
+        <Parent guid="guidFastKoalaProjAddCmdSet" id="grpIdProjectContextAdd" />
+        <Strings>
+          <ButtonText>Build Scripts</ButtonText>
+          <CommandName>Build Scripts</CommandName>
+        </Strings>
+      </Menu>
+    </Menus>
    
     <!--The bitmaps section is used to define the bitmaps that are used for the commands.-->
     <Bitmaps>
@@ -131,9 +152,18 @@
       <IDSymbol name="FastKoalaProjMenu" value="0x1030" />
       <IDSymbol name="cmdidEnableBuildTimeTransformationsProj" value="0x0101" />
     </GuidSymbol>
-    
-    
-    
+
+
+    <GuidSymbol name="guidFastKoalaProjAddCmdSet" value="{fb9920bc-46a6-4d85-9926-a08a10239137}">
+      <IDSymbol name="grpIdProjectContextAdd" value="0x1080" />
+      <!--<IDSymbol name="grpIdSolutionContextAdd" value="0x1081" />-->
+      <IDSymbol name="mnuFastKoalaProjAddMenu" value="2011" />
+      <IDSymbol name="grpIdFastKoalaAddBuildScript" value="2100"/>
+      <IDSymbol name="cmdIdFastKoalaAddPowerShellScript" value="2101" />
+    </GuidSymbol>
+
+
+
     <GuidSymbol name="guidImages" value="{a11f7272-f981-4b2d-9f3b-e1d7fff05493}" >
       <IDSymbol name="bmpPic1" value="1" />
       <IDSymbol name="bmpPic2" value="2" />

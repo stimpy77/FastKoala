@@ -144,7 +144,7 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BuildScriptSupport\BuildScriptSupportInjector.cs">
+    <Compile Include="BuildScriptSupport\PSBuildScriptSupportInjector.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Events\AfterLoadProjectEventArgs.cs" />

@@ -3,11 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Wijits.FastKoala.Logging;
 
 namespace Wijits.FastKoala.BuildScriptInjections
 {
-    public class BuildScriptInjector
+    public class PSBuildScriptInjector
     {
+        private ILogger _logger;
+        public PSBuildScriptInjector(ILogger logger)
+        {
+            _logger = logger;
+        }
+
         /*
          * todo: inject this noise :D
          * 
@@ -90,6 +97,8 @@ namespace Wijits.FastKoala.BuildScriptInjections
           <Target Name="PSScriptsAfter" AfterTargets="Build">
             <InvokePowerShell ScriptFile="%(InvokeAfter.Identity)" Condition="'@(InvokeAfter)' != ''" />
           </Target>
+         * 
+         * https://gist.github.com/stimpy77/6b0626480e18f9206b98
          */
     }
 }
