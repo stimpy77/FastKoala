@@ -178,7 +178,7 @@ namespace Wijits.FastKoala
             {
 //#endif
                 var project = appConfigFileChangedEventArgs.Project;
-                if (!project.IsAvailable()) return;
+                if (!project.IsAvailable() || !File.Exists(project.FullName)) return;
                 var fileInfo = new FileInfo(appConfigFileChangedEventArgs.AppConfigFile);
                 var projectProperties = new ProjectProperties(project);
                 if (projectProperties.InlineAppCfgTransforms != true)
@@ -210,7 +210,7 @@ namespace Wijits.FastKoala
             }
             catch (Exception e)
             {
-                Dte.GetLogger().LogError(e.StackTrace);
+                Dte.GetLogger().LogError(e.GetType().Name + " - " + e.ToString());
             }
 //#endif
         }
