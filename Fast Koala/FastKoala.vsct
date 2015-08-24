@@ -102,8 +102,7 @@
         </Strings>
       </Button>
 
-      <Button guid="guidFastKoalaProjAddCmdSet"
-              id="cmdIdFastKoalaAddPowerShellScript" priority="0x1100" type="Button">
+      <Button guid="guidFastKoalaProjAddCmdSet" id="cmdIdFastKoalaAddPowerShellScript" priority="0x1100" type="Button">
         <Parent guid="guidFastKoalaProjAddCmdSet" id="grpIdFastKoalaAddBuildScript" />
         <Strings>
           <ButtonText>PowerShell Script (.ps1)</ButtonText>
@@ -116,8 +115,8 @@
       <Menu guid="guidFastKoalaProjAddCmdSet" id="mnuFastKoalaProjAddMenu" priority="0x1100" type="Menu">
         <Parent guid="guidFastKoalaProjAddCmdSet" id="grpIdProjectContextAdd" />
         <Strings>
-          <ButtonText>Build Scripts</ButtonText>
-          <CommandName>Build Scripts</CommandName>
+          <ButtonText>Build Script</ButtonText>
+          <CommandName>Build Script</CommandName>
         </Strings>
       </Menu>
     </Menus>
@@ -154,12 +153,12 @@
     </GuidSymbol>
 
 
-    <GuidSymbol name="guidFastKoalaProjAddCmdSet" value="{fb9920bc-46a6-4d85-9926-a08a10239137}">
+    <GuidSymbol name="guidFastKoalaProjAddCmdSet" value="{6B120CE5-ED5F-4B86-AEEC-FD54D1C0C9FF}">
       <IDSymbol name="grpIdProjectContextAdd" value="0x1080" />
       <!--<IDSymbol name="grpIdSolutionContextAdd" value="0x1081" />-->
-      <IDSymbol name="mnuFastKoalaProjAddMenu" value="2011" />
-      <IDSymbol name="grpIdFastKoalaAddBuildScript" value="2100"/>
-      <IDSymbol name="cmdIdFastKoalaAddPowerShellScript" value="2101" />
+      <IDSymbol name="mnuFastKoalaProjAddMenu" value="0x2011" />
+      <IDSymbol name="grpIdFastKoalaAddBuildScript" value="0x2100"/>
+      <IDSymbol name="cmdIdFastKoalaAddPowerShellScript" value="0x2101" />
     </GuidSymbol>
 
 

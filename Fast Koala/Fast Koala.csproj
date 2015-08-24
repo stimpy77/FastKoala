@@ -144,6 +144,12 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BuildScriptSupport\AddBuildScriptNamePrompt.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="BuildScriptSupport\AddBuildScriptNamePrompt.Designer.cs">
+      <DependentUpon>AddBuildScriptNamePrompt.cs</DependentUpon>
+    </Compile>
     <Compile Include="BuildScriptSupport\PSBuildScriptSupportInjector.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -193,6 +199,9 @@
     <Compile Include="VsEnvironment.cs" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="BuildScriptSupport\AddBuildScriptNamePrompt.resx">
+      <DependentUpon>AddBuildScriptNamePrompt.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

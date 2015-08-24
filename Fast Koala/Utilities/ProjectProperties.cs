@@ -100,5 +100,19 @@ namespace Wijits.FastKoala.Utilities
                 SetPropertyValue("CfgBaseName", value);
             }
         }
+
+        public bool PowerShellBuildEnabled
+        {
+            get
+            {
+                var ret = GetPropertyValue("PowerShellBuildEnabled");
+                if (string.IsNullOrEmpty(ret)) ret = "false";
+                return bool.Parse(ret);
+            }
+            set
+            {
+                SetPropertyValue("PowerShellBuildEnabled", value);
+            }
+        }
     }
 }

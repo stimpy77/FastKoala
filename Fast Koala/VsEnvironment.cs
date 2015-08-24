@@ -79,12 +79,32 @@ namespace Wijits.FastKoala
 
         public static Project GetProjectByName(this DTE dte, string projectName)
         {
-            return dte.Solution.Cast<Project>().SingleOrDefault(project => project.Name == projectName);
+            return dte.Solution.Projects.Cast<Project>().SingleOrDefault(project => project.Name == projectName);
         }
 
         public static Project GetProjectByUniqueName(this DTE dte, string projectUniqueName)
         {
-            return dte.Solution.Cast<Project>().SingleOrDefault(project => project.UniqueName == projectUniqueName);
+            return dte.Solution.Projects.Cast<Project>().SingleOrDefault(project => project.UniqueName == projectUniqueName);
+        }
+
+        public static Project GetProjectByFullName(this DTE dte, string projectFullName)
+        {
+            Project result = null;
+            Project _default = null;
+            dte.Solution.Projects.Cast<Project>().ToList().ForEach(project =>
+            {
+                var projFullName = "";
+                try
+                {
+                    projFullName = project.FullName;
+                }
+                catch
+                {
+                    _default = project;
+                }
+                if ((projFullName ?? "").ToLower() == projectFullName.ToLower()) result = project;
+            });
+            return result ?? _default;
         }
 
         public static Project ReloadProject(this DTE dte, Project project)

@@ -14,6 +14,7 @@ using EnvDTE;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Wijits.FastKoala.BuildScriptInjections;
 using Wijits.FastKoala.Events;
 using Wijits.FastKoala.Logging;
 using Wijits.FastKoala.SourceControl;
@@ -97,6 +98,14 @@ namespace Wijits.FastKoala
             addMissingTransformationsMenuItem.BeforeQueryStatus +=
                 AddMissingTransformationsMenuItem_BeforeQueryStatus;
             mcs.AddCommand(addMissingTransformationsMenuItem);
+
+            var addPowerShellScriptCmd = new CommandID(GuidList.guidFastKoalaProjAddCmdSet,
+                (int)PkgCmdIDList.cmdIdFastKoalaAddPowerShellScript);
+            var addPowerShellScriptMenuItem =
+                new OleMenuCommand(AddPowerShellScriptMenuItem_Invoke, addPowerShellScriptCmd);
+            addPowerShellScriptMenuItem.BeforeQueryStatus +=
+                AddPowerShellScriptMenuItem_BeforeQueryStatus;
+            mcs.AddCommand(addPowerShellScriptMenuItem);
         }
 
         private void SubscribeDteEvents()
@@ -313,6 +322,61 @@ namespace Wijits.FastKoala
             }
         }
 
+        #endregion
+
+        #region Add PowerShell Script
+        private void AddPowerShellScriptMenuItem_BeforeQueryStatus(object sender, EventArgs e)
+        {
+            // anything goes?
+        }
+
+        private async void AddPowerShellScriptMenuItem_Invoke(object sender, EventArgs e)
+        {
+            try
+            {
+                // get the menu that fired the event
+                var menuCommand = sender as OleMenuCommand;
+                if (menuCommand == null) return;
+
+                IVsHierarchy hierarchy;
+                uint itemid;
+
+                var project = GetSelectedProject();
+                var projectFolder = project.GetDirectory();
+                if (project == null) return;
+
+                var isProject = (!IsSingleProjectItemSelection(out hierarchy, out itemid));
+                string containerDirectory;
+                if (!isProject)
+                {
+                    // Get the file path
+                    string itemFullPath = null;
+                    ((IVsProject) hierarchy).GetMkDocument(itemid, out itemFullPath);
+                    containerDirectory = new DirectoryInfo(itemFullPath).FullName;
+                }
+                else containerDirectory = projectFolder;
+
+                var psBuildScriptSupportInjector = GetNewPowerShellBuildScriptSupportInjector();
+                await psBuildScriptSupportInjector.AddPowerShellScript(containerDirectory);
+            }
+            catch (Exception exception)
+            {
+#if DEBUG
+                // what the heck just happened?
+                if (System.Diagnostics.Debugger.IsAttached) throw;
+#endif
+                LogAndPromptUnhandledError(exception);
+            }
+            
+        }
+
+        private PSBuildScriptSupportInjector GetNewPowerShellBuildScriptSupportInjector()
+        {
+            var logger = Dte.GetLogger();
+            var project = GetSelectedProject();
+            var result = new PSBuildScriptSupportInjector(project, logger);
+            return result;
+        }
         #endregion
 
 #region EnableBuildTimeTransformations

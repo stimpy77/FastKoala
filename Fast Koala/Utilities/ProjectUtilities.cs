@@ -119,16 +119,16 @@ namespace Wijits.FastKoala.Utilities
             }
         }
 
-        public static async Task SaveProjectRoot(this Project project)
+        public static async Task<Project> SaveProjectRoot(this Project project)
         {
             var projectFullPath = (new FileInfo(project.FullName).FullName); // get Windows-"formal" abs path
             using (new IdioticProjectUnloaderBecauseMicrosoftsVSSDKIsntStable(project))
             {
-                await SaveProjectRoot(projectFullPath);
+                return await SaveProjectRoot(projectFullPath);
             }
         }
 
-        public static async Task SaveProjectRoot(string projectFullName)
+        public static async Task<Project> SaveProjectRoot(string projectFullName)
         {
             var projectFullPath = (new FileInfo(projectFullName).FullName);
             ProjectRootElement root;
@@ -136,12 +136,13 @@ namespace Wijits.FastKoala.Utilities
             {
                 if (!LoadedProjectRoots.ContainsKey(projectFullPath))
                 {
-                    return;
+                    return null;
                 }
                 root = LoadedProjectRoots[projectFullPath];
             }
             await VsEnvironment.Dte.CheckOutFileForEditIfSourceControlled(projectFullPath);
             root.Save(projectFullPath);
+            return VsEnvironment.Dte.GetProjectByFullName(projectFullName);
         }
 
         // source: http://www.mztools.com/articles/2007/mz2007016.aspx
