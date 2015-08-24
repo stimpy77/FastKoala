@@ -151,7 +151,7 @@ namespace Wijits.FastKoala
         }
 
         // ReSharper disable once UnusedParameter.Local
-        private static void SleepAndCycleMessagePump(this DTE dte, int sleepMs = 250)
+        public static void SleepAndCycleMessagePump(this DTE dte, int sleepMs = 250)
         {
             Thread.Sleep(sleepMs/2);
             Application.DoEvents();

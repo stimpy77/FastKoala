@@ -48,10 +48,11 @@ namespace Wijits.FastKoala.BuildScriptInjections
             if (!scriptFile.Contains(":") && !scriptFile.StartsWith("\\\\"))
                 scriptFile = Path.Combine(containerDirectory, scriptFile);
             var scriptFileRelativePath = FileUtilities.GetRelativePath(_project.GetDirectory(), scriptFile);
-            
+
+            if (!_project.Saved) _project.Save();
             _project = await EnsureProjectHasPowerShellEnabled();
 
-            File.WriteAllText(scriptFile, "echo \"`$MSBuildProjectDirectory=$MSBuildProjectDirectory\"");
+            File.WriteAllText(scriptFile, "# Write-Output \"`$MSBuildProjectDirectory=$MSBuildProjectDirectory\"");
             var addedItem = _project.ProjectItems.AddFromFile(scriptFile);
             addedItem.Properties.Item("ItemType").Value 
                 = invokeAfter.Value ? "InvokeAfter" : "InvokeBefore";
@@ -121,7 +122,7 @@ namespace Wijits.FastKoala.BuildScriptInjections
         if (!ScriptFile.ToLower().EndsWith("".ps1"")) return true;
         Project project = ProjectCollection.GlobalProjectCollection.GetLoadedProjects(BuildEngine.ProjectFileOfTaskNode).FirstOrDefault()
             ?? new Project(BuildEngine.ProjectFileOfTaskNode);
-        if (!ScriptFile.Contains("":"") && !ScriptFile.StartsWith(""\\\\"")
+        if (!ScriptFile.Contains("":"") && !ScriptFile.StartsWith(""\\\\""))
             ScriptFile = project.DirectoryPath + ""\\"" + ScriptFile;
         var runspaceConfig = RunspaceConfiguration.Create();
         using (Runspace runspace = RunspaceFactory.CreateRunspace(runspaceConfig)) 
