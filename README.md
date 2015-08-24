@@ -26,12 +26,6 @@ and Web.config at project root becomes transient (and should never be added to s
 
 ### Bin-Targeted Build-Time Transformations###
 This tool also supports enabling build-time transformations for class library projects (which can have config files) and for Windows apps (other than ClickOnce apps -- support for ClickOnce is coming but will use Inline Transformations) that need to transform out to the bin\Debug or bin\Release directory as AssemblyName.exe.config. For App.config and its transform files **there is no App_Config (or other chosen name) folder.** The App.config in the root directory is transformed upon build in the bin directory.
-    
-##Adding Build Scripts
-
-Fast Koala also supports adding build scripts, such as PowerShell scripts. To use this feature, right-click on the project node or a project folder in Solution Explorer and choose Add -> Build Script -> PowerShell Script (.ps1). Scripts added with Fast Koala have the added advantage of having the MSBuild project properties exposed to the script runtime engine.
-
-Additional script types are planned in the future.
 
 ### Where to get it
 You can download the official current release from the gallery here:
@@ -51,6 +45,12 @@ For web apps, which use inline transformations in a nested folder, the default f
 Web sites are not supported and will never be supported.
 
 ASP.NET 5 is not supported; it might not ever be supported.
+    
+##Adding Build Scripts
+
+Fast Koala also supports adding build scripts, such as PowerShell scripts. To use this feature, right-click on the project node or a project folder in Solution Explorer and choose Add -> Build Script -> PowerShell Script (.ps1). Scripts added with Fast Koala have the added advantage of having the MSBuild project properties exposed to the script runtime engine.
+
+Additional script types are planned in the future.
 
 ### How it works
 
