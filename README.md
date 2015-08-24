@@ -5,8 +5,8 @@ There are future plans to also ease config name management and add MSBuild scrip
 
 ### Video Demos
 
-* Part 1: https://www.youtube.com/watch?v=WTMqW06vaSs
-* Part 2: https://www.youtube.com/watch?v=TIa5gs5rXGQ
+* Part 1 (v1.1.13): https://www.youtube.com/watch?v=WTMqW06vaSs
+* Part 2 (v1.1.13): https://www.youtube.com/watch?v=TIa5gs5rXGQ
 
 ### "Build-time" means F5
 
