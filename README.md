@@ -95,7 +95,7 @@ So, a complete path is built as an MSBuild property as such, which Fast Koala al
     
 ##Adding Build Scripts
 
-Fast Koala also supports adding build scripts, such as PowerShell scripts. Scripts added with Fast Koala have the added advantage of having the MSBuild project properties exposed to the script runtime engine.
+Fast Koala also supports adding build scripts, such as PowerShell scripts. To use this feature, right-click on the project node or a project folder in Solution Explorer and choose Add -> Build Script -> PowerShell Script (.ps1). Scripts added with Fast Koala have the added advantage of having the MSBuild project properties exposed to the script runtime engine.
 
 Additional script types are planned in the future.
 
