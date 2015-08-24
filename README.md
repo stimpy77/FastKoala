@@ -46,7 +46,7 @@ Web sites are not supported and will never be supported.
 
 ASP.NET 5 is not supported; it might not ever be supported.
     
-##Adding Build Scripts
+### Adding Build Scripts
 
 Fast Koala also supports adding build scripts, such as PowerShell scripts. To use this feature, right-click on the project node or a project folder in Solution Explorer and choose Add -> Build Script -> PowerShell Script (.ps1). Scripts added with Fast Koala have the added advantage of having the MSBuild project properties exposed to the script runtime engine.
 
