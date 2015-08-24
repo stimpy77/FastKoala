@@ -434,7 +434,7 @@ namespace Wijits.FastKoala
                 // what the heck just happened?
                 if (System.Diagnostics.Debugger.IsAttached) throw;
 #endif
-                LogAndPromptUnhandledError(exception);
+                LogUnhandledError(exception);
             }
         }
 
@@ -471,7 +471,7 @@ namespace Wijits.FastKoala
                 // what the heck just happened?
                 if (System.Diagnostics.Debugger.IsAttached) throw;
 #endif
-                LogAndPromptUnhandledError(exception);
+                LogUnhandledError(exception);
             }
         }
 
@@ -635,6 +635,14 @@ namespace Wijits.FastKoala
                     Marshal.Release(hierarchyPtr);
                 }
             }
+        }
+
+        private void LogUnhandledError(Exception exception)
+        {
+            var logger = Dte.GetLogger();
+            logger.LogError("Unhandled " + exception.GetType().Name + " (" + exception.GetType().FullName + "):\r\n"
+                + exception.StackTrace
+                + "\r\nPlease forward this log to " + FastKoalaMaintainerEmail);
         }
 
         private void LogAndPromptUnhandledError(Exception exception)
