@@ -92,6 +92,12 @@ So, a complete path is built as an MSBuild property as such, which Fast Koala al
     <AppConfigBaseFileFullPath Condition="Exists('$(MSBuildProjectDirectory)\App.config')">$(MSBuildProjectDirectory)\App.config</AppConfigBaseFileFullPath>
     <AppConfigBaseFileFullPath Condition="Exists('$(MSBuildProjectDirectory)\Web.config')">$(MSBuildProjectDirectory)\Web.config</AppConfigBaseFileFullPath>
     <AppConfigBaseFileFullPath Condition="'$(InlineAppCfgTransforms)' == 'true'">$(MSBuildProjectDirectory)\$(ConfigDir)\$(AppCfgType).Base.config</AppConfigBaseFileFullPath>
+    
+##Adding Build Scripts
+
+Fast Koala also supports adding build scripts, such as PowerShell scripts. Scripts added with Fast Koala have the added advantage of having the MSBuild project properties exposed to the script runtime engine.
+
+Additional script types are planned in the future.
 
 ### Development notes
 
