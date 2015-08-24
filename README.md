@@ -3,6 +3,11 @@ Enables build-time config transforms for various project types including ASP.NET
 
 There are future plans to also ease config name management and add MSBuild scripts (Imports directives to custom .targets files) to a project.
 
+### Video Demos
+
+* Part 1 (v1.1.13): https://www.youtube.com/watch?v=WTMqW06vaSs
+* Part 2 (v1.1.13): https://www.youtube.com/watch?v=TIa5gs5rXGQ
+
 ### "Build-time" means F5
 
 All references to "build-time" refer to F6 (Build) or F5 ([Build and] Debug). This means that you can finally test web apps with different configuration transformations applied *without* publishing, you can simply select the configuration and hit F5.
