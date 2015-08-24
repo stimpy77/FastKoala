@@ -47,7 +47,6 @@ namespace Wijits.FastKoala.BuildScriptInjections
             }
             if (!scriptFile.Contains(":") && !scriptFile.StartsWith("\\\\"))
                 scriptFile = Path.Combine(containerDirectory, scriptFile);
-            var scriptFileRelativePath = FileUtilities.GetRelativePath(_project.GetDirectory(), scriptFile);
 
             if (!_project.Saved) _project.Save();
             _project = await EnsureProjectHasPowerShellEnabled();

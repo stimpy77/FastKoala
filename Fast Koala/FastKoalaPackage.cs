@@ -120,7 +120,7 @@ namespace Wijits.FastKoala
                 .ProjectRenamed += OnProjectRenamed;
 
             // credit: http://www.mztools.com/articles/2014/MZ2014024.aspx
-            var _solution = base.GetService(typeof(SVsSolution)) as IVsSolution;
+            var _solution = GetService(typeof(SVsSolution)) as IVsSolution;
             if (_solution != null)
             {
                 _solutionEventsHandler = new SolutionEventsWrapper();
@@ -248,6 +248,8 @@ namespace Wijits.FastKoala
                 var project = GetSelectedProject();
                 if (project != null)
                 {
+                    if (!project.Saved) project.Save();
+                    if (!project.Saved) return;
                     var transforms = await GetTransformationsEnabler(project);
                     var properties = transforms.ProjectProperties;
                     if (transforms.HasBuildTimeTransformationsEnabled && 
@@ -271,7 +273,7 @@ namespace Wijits.FastKoala
             }
         }
 
-        private async Task<BuildTimeTransformationsEnabler> GetTransformationsEnabler(EnvDTE.Project project)
+        private async Task<BuildTimeTransformationsEnabler> GetTransformationsEnabler(Project project)
         {
             var logger = Dte.GetLogger();
             var io = await VsFileSystemManipulatorFactory.GetFileSystemManipulatorForEnvironment(project);
@@ -290,7 +292,7 @@ namespace Wijits.FastKoala
             get { return (DTE) GetService(typeof (DTE)); }
         }
 
-        private EnvDTE.Project GetSelectedProject()
+        private Project GetSelectedProject()
         {
             try
             {
@@ -310,8 +312,8 @@ namespace Wijits.FastKoala
                 if (hierarchy == null) return null;
                 object objProj;
                 hierarchy.GetProperty(itemid, (int) __VSHPROPID.VSHPROPID_ExtObject, out objProj);
-                var projectItem = objProj as EnvDTE.ProjectItem;
-                var project = objProj as EnvDTE.Project;
+                var projectItem = objProj as ProjectItem;
+                var project = objProj as Project;
 
                 return project ?? (projectItem != null ? projectItem.ContainingProject : null);
             }
@@ -479,6 +481,9 @@ namespace Wijits.FastKoala
             var project = GetSelectedProject();
             if (project == null) return;
             var transformationsEnabler = await GetTransformationsEnabler(project);
+            Cursor previousCursor = Cursor.Current;
+            Cursor.Current = Cursors.WaitCursor;
+
             try
             {
                 await transformationsEnabler.EnableBuildTimeConfigTransformations();
@@ -491,6 +496,8 @@ namespace Wijits.FastKoala
 #endif
                 LogAndPromptUnhandledError(exception);
             }
+            Cursor.Current = previousCursor;
+
         }
 
 #endregion

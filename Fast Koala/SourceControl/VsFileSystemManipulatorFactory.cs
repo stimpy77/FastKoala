@@ -55,7 +55,12 @@ namespace Wijits.FastKoala.SourceControl
             // Did I mention? VS SDK API for source control detection and support is really, really horrible.
 
             var tfs = new TfsExeWrapper(project.GetDirectory(), VsEnvironment.Dte.GetLogger());
-            if (await tfs.ItemIsUnderSourceControl(project.FullName)) return "tfs";
+            var projectFilePath = project.FullName;
+            if (File.Exists(projectFilePath) &&
+                await tfs.ItemIsUnderSourceControl(projectFilePath))
+            {
+                return "tfs";
+            }
             var sccdir = project.DTE.Solution.GetDirectory();
             if (string.IsNullOrEmpty(sccdir)) sccdir = project.GetDirectory();
             return await DetectSccSystem(sccdir);

@@ -25,7 +25,13 @@ namespace Wijits.FastKoala.Utilities
 
         public static string GetDirectory(this Project project)
         {
-            return Directory.GetParent(project.FullName).FullName;
+            var projectPath = project.FullName;
+            if (string.IsNullOrEmpty(projectPath) || !File.Exists(projectPath))
+            {
+                // failover to solution .. not a clean strategy but might work around odd exceptions
+                projectPath = project.DTE.Solution.FullName; 
+            }
+            return Directory.GetParent(projectPath).FullName;
         }
 
         public static bool IsSourceControlled(this Project project)
