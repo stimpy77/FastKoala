@@ -178,7 +178,9 @@ namespace Wijits.FastKoala
             {
 //#endif
                 var project = appConfigFileChangedEventArgs.Project;
-                if (!project.IsAvailable() || !File.Exists(project.FullName)) return;
+                string projectFullName;
+                try { projectFullName = project.FullName; } catch { return; }
+                if (!project.IsAvailable() || !File.Exists(projectFullName)) return;
                 var fileInfo = new FileInfo(appConfigFileChangedEventArgs.AppConfigFile);
                 var projectProperties = new ProjectProperties(project);
                 if (projectProperties.InlineAppCfgTransforms != true)
