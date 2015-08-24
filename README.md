@@ -7,6 +7,12 @@ There are future plans to also ease config name management and add MSBuild scrip
 
 All references to "build-time" refer to F6 (Build) or F5 ([Build and] Debug). This means that you can finally test web apps with different configuration transformations applied *without* publishing, you can simply select the configuration and hit F5.
 
+
+### Video Demos
+
+* Part 1: https://www.youtube.com/watch?v=WTMqW06vaSs
+* Part 2: https://www.youtube.com/watch?v=TIa5gs5rXGQ
+
 ### Inline Build-Time Transformations
 This tool enables build-time transformations for ASP.NET 4.6-or-below web apps (not websites), including ASP.NET MVC 5.
 
