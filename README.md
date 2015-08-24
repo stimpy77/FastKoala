@@ -26,6 +26,12 @@ and Web.config at project root becomes transient (and should never be added to s
 
 ### Bin-Targeted Build-Time Transformations###
 This tool also supports enabling build-time transformations for class library projects (which can have config files) and for Windows apps (other than ClickOnce apps -- support for ClickOnce is coming but will use Inline Transformations) that need to transform out to the bin\Debug or bin\Release directory as AssemblyName.exe.config. For App.config and its transform files **there is no App_Config (or other chosen name) folder.** The App.config in the root directory is transformed upon build in the bin directory.
+    
+##Adding Build Scripts
+
+Fast Koala also supports adding build scripts, such as PowerShell scripts. To use this feature, right-click on the project node or a project folder in Solution Explorer and choose Add -> Build Script -> PowerShell Script (.ps1). Scripts added with Fast Koala have the added advantage of having the MSBuild project properties exposed to the script runtime engine.
+
+Additional script types are planned in the future.
 
 ### Where to get it
 You can download the official current release from the gallery here:
@@ -92,12 +98,6 @@ So, a complete path is built as an MSBuild property as such, which Fast Koala al
     <AppConfigBaseFileFullPath Condition="Exists('$(MSBuildProjectDirectory)\App.config')">$(MSBuildProjectDirectory)\App.config</AppConfigBaseFileFullPath>
     <AppConfigBaseFileFullPath Condition="Exists('$(MSBuildProjectDirectory)\Web.config')">$(MSBuildProjectDirectory)\Web.config</AppConfigBaseFileFullPath>
     <AppConfigBaseFileFullPath Condition="'$(InlineAppCfgTransforms)' == 'true'">$(MSBuildProjectDirectory)\$(ConfigDir)\$(AppCfgType).Base.config</AppConfigBaseFileFullPath>
-    
-##Adding Build Scripts
-
-Fast Koala also supports adding build scripts, such as PowerShell scripts. To use this feature, right-click on the project node or a project folder in Solution Explorer and choose Add -> Build Script -> PowerShell Script (.ps1). Scripts added with Fast Koala have the added advantage of having the MSBuild project properties exposed to the script runtime engine.
-
-Additional script types are planned in the future.
 
 ### Development notes
 
