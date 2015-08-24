@@ -11,6 +11,7 @@ using Wijits.FastKoala.BuildScriptSupport;
 using Wijits.FastKoala.Logging;
 using Wijits.FastKoala.Utilities;
 // ReSharper disable LocalizableElement
+// ReSharper disable SimplifyLinqExpression
 
 namespace Wijits.FastKoala.BuildScriptInjections
 {
@@ -76,11 +77,15 @@ namespace Wijits.FastKoala.BuildScriptInjections
             var utParamsScriptFile = utParameters.AddParameter("ScriptFile");
             utParamsScriptFile.ParameterType = "System.String";
             utParamsScriptFile.Required = "true";
-            var invokeBeforeAfterGroup = projRoot.AddItemGroup();
-            var invokeBefore = invokeBeforeAfterGroup.AddItem("AvailableItemName", "InvokeBefore");
-            invokeBefore.AddMetadata("Visible", "false");
-            var invokeAfter = invokeBeforeAfterGroup.AddItem("AvailableItemName", "InvokeAfter");
-            invokeAfter.AddMetadata("Visible", "false");
+            if (!projRoot.PropertyGroups.Any(pg => pg.Label == "InvokeBeforeAfter"))
+            {
+                var invokeBeforeAfterGroup = projRoot.AddItemGroup();
+                invokeBeforeAfterGroup.Label = "InvokeBeforeAfter";
+                var invokeBefore = invokeBeforeAfterGroup.AddItem("AvailableItemName", "InvokeBefore");
+                invokeBefore.AddMetadata("Visible", "false");
+                var invokeAfter = invokeBeforeAfterGroup.AddItem("AvailableItemName", "InvokeAfter");
+                invokeAfter.AddMetadata("Visible", "false");
+            }
             var psScriptsBefore = projRoot.AddTarget("PSScriptsBefore");
             psScriptsBefore.BeforeTargets = "Build";
             var invokeBeforeExec = psScriptsBefore.AddTask("InvokePowerShell");
