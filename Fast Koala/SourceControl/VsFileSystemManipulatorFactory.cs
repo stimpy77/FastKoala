@@ -31,7 +31,7 @@ namespace Wijits.FastKoala.SourceControl
                 case "tfs":
                     result = new TfsExeWrapper(project.GetDirectory(), dte.GetLogger());
                     break;
-                case "git": // not yet implemented
+                case "git":
                     result = new GitExeWrapper(project.GetDirectory(), dte.GetLogger());
                     break;
                 case "hg": // not yet implemented
