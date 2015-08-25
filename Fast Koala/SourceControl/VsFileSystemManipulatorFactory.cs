@@ -56,8 +56,16 @@ namespace Wijits.FastKoala.SourceControl
 
             var tfs = new TfsExeWrapper(project.GetDirectory(), VsEnvironment.Dte.GetLogger());
             var projectFilePath = project.FullName;
-            if (File.Exists(projectFilePath) &&
-                await tfs.ItemIsUnderSourceControl(projectFilePath))
+            bool exists;
+            try
+            {
+                exists = File.Exists(projectFilePath);
+            }
+            catch(FileNotFoundException)
+            {
+                exists = false;
+            }
+            if (exists && await tfs.ItemIsUnderSourceControl(projectFilePath))
             {
                 return "tfs";
             }
