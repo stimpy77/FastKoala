@@ -107,3 +107,5 @@ So, a complete path is built as an MSBuild property as such, which Fast Koala al
 ### Development notes
 
 This project *does not* use automated unit tests in source code. :(
+
+You will need the Visual Studio SDK. The project is a VS2013 project and debugs in VS2013; runs in VS2015 just the same when published. You’ll need to set up Experimental debugging. http://stackoverflow.com/a/9281921/11398 
