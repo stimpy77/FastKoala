@@ -27,7 +27,7 @@ This tool enables build-time transformations for ASP.NET 4.6-or-below web apps (
   
 and Web.config at project root becomes transient (and should never be added to source control). **Web.config is created upon build.**
 
-<sub><sup>(This was a feature I and many others always wanted from Slow Cheetah.)</sup></sub>
+<sub><sup>(This was a feature I and many others always wanted from other extensions such as Slow Cheetah or Config Transforms.)</sup></sub>
 
 ### Bin-Targeted Build-Time Transformations###
 This tool also supports enabling build-time transformations for class library projects (which can have config files) and for Windows apps (other than ClickOnce apps -- support for ClickOnce is coming but will use Inline Transformations) that need to transform out to the bin\Debug or bin\Release directory as AssemblyName.exe.config. For App.config and its transform files **there is no App_Config (or other chosen name) folder.** The App.config in the root directory is transformed upon build in the bin directory.
