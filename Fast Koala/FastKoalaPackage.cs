@@ -250,8 +250,6 @@ namespace Wijits.FastKoala
                 var project = GetSelectedProject();
                 if (project != null)
                 {
-                    if (!project.Saved) project.Save();
-                    if (!project.Saved) return;
                     var transforms = await GetTransformationsEnabler(project);
                     var properties = transforms.ProjectProperties;
                     if (transforms.HasBuildTimeTransformationsEnabled && 
@@ -378,7 +376,7 @@ namespace Wijits.FastKoala
         {
             var logger = Dte.GetLogger();
             var project = GetSelectedProject();
-            var result = new PSBuildScriptSupportInjector(project, logger);
+            var result = new PSBuildScriptSupportInjector(project, logger, GetNativeWindow());
             return result;
         }
         #endregion

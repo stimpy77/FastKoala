@@ -18,57 +18,71 @@ namespace Wijits.FastKoala.BuildScriptInjections
     public class PSBuildScriptSupportInjector
     {
         private ILogger _logger;
-        private EnvDTE.Project _project;
-        private readonly string _projectName;
+        private string _projectName;
         private readonly ProjectProperties _projectProperties;
+        private readonly IWin32Window _ownerWindow;
+        private string _projectUniqueName;
+        private DTE _dte;
 
-        public PSBuildScriptSupportInjector(EnvDTE.Project project, ILogger logger)
+        public PSBuildScriptSupportInjector(EnvDTE.Project project, ILogger logger, IWin32Window ownerWindow)
         {
-            _project = project;
+            _dte = project.DTE;
+            _projectUniqueName = project.UniqueName;
             _projectName = project.Name;
             _projectProperties = new ProjectProperties(project);
             _logger = logger;
+            _ownerWindow = ownerWindow;
         }
         
-        public async Task AddPowerShellScript(string containerDirectory, 
+        public async Task<bool> AddPowerShellScript(string containerDirectory, 
             string scriptFile = null, bool? invokeAfter = null)
         {
             invokeAfter = invokeAfter ?? true;
             if (string.IsNullOrWhiteSpace(containerDirectory))
-                containerDirectory = _project.GetDirectory();
+                containerDirectory = Project.GetDirectory();
 
             if (string.IsNullOrWhiteSpace(scriptFile))
             {
                 var dialog = new AddBuildScriptNamePrompt(containerDirectory, ".ps1");
                 var dialogResult = dialog.ShowDialog(VsEnvironment.OwnerWindow);
-                if (dialogResult == DialogResult.Cancel) return;
+                if (dialogResult == DialogResult.Cancel) return false;
                 scriptFile = dialog.FileName;
                 invokeAfter = dialog.InvokeAfter;
             }
             if (!scriptFile.Contains(":") && !scriptFile.StartsWith("\\\\"))
                 scriptFile = Path.Combine(containerDirectory, scriptFile);
 
-            if (!_project.Saved) _project.Save();
-            _project = await EnsureProjectHasPowerShellEnabled();
+            Project = await EnsureProjectHasPowerShellEnabled();
+            if (Project == null) return false;
 
             File.WriteAllText(scriptFile, "# Write-Output \"`$MSBuildProjectDirectory=$MSBuildProjectDirectory\"");
-            var addedItem = _project.ProjectItems.AddFromFile(scriptFile);
+            var addedItem = Project.ProjectItems.AddFromFile(scriptFile);
             addedItem.Properties.Item("ItemType").Value 
                 = invokeAfter.Value ? "InvokeAfter" : "InvokeBefore";
+            return true;
         }
 
         private async Task<EnvDTE.Project> EnsureProjectHasPowerShellEnabled()
         {
             if (!_projectProperties.PowerShellBuildEnabled)
                 return await InjectPowerShellScriptSupport();
-            return _project;
+            return Project;
         }
 
         private async Task<EnvDTE.Project> InjectPowerShellScriptSupport()
         {
-            var projRoot = _project.GetProjectRoot();
+            if (!Project.Saved || !Project.DTE.Solution.Saved || 
+                string.IsNullOrEmpty(Project.FullName) || string.IsNullOrEmpty(Project.DTE.Solution.FullName))
+            {
+                MessageBox.Show(_ownerWindow,
+                    "Please save the project and solution before adding PowerShell build scripts.",
+                    "Aborted", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+                return null;
+            }
+
+            var projRoot = Project.GetProjectRoot();
             if (projRoot.UsingTasks.Any(ut => ut.TaskName == "InvokePowerShell"))
-                return _project;
+                return Project;
             var usingTask = projRoot.AddUsingTask("InvokePowerShell",
                 @"$(MSBuildToolsPath)\Microsoft.Build.Tasks.v$(MSBuildToolsVersion).dll", null);
             usingTask.TaskFactory = "CodeTaskFactory";
@@ -98,10 +112,10 @@ namespace Wijits.FastKoala.BuildScriptInjections
             invokeAfterExec.Condition = "'@(InvokeAfter)' != ''";
 
             _projectProperties.PowerShellBuildEnabled = true;
-            var projectRootPath = _project.FullName;
-            _project = await _project.SaveProjectRoot();
+            var projectRootPath = Project.FullName;
+            Project = await Project.SaveProjectRoot();
             
-            VsEnvironment.Dte.UnloadProject(_project);
+            VsEnvironment.Dte.UnloadProject(Project);
 
             var projXml = File.ReadAllText(projectRootPath);
             // ReSharper disable StringIndexOfIsCultureSpecific.1
@@ -177,6 +191,20 @@ namespace Wijits.FastKoala.BuildScriptInjections
             File.WriteAllText(projectRootPath, projXml);
             VsEnvironment.Dte.ReloadJustUnloadedProject();
             return VsEnvironment.Dte.GetProjectByFullName(projectRootPath);
+        }
+
+        public Project Project
+        {
+            get
+            {
+                return _dte.GetProjectByUniqueName(_projectUniqueName)
+                       ?? _dte.GetProjectByName(_projectName);
+            }
+            set
+            {
+                _projectName = value.Name;
+                _projectUniqueName = value.UniqueName;
+            }
         }
     }
 }

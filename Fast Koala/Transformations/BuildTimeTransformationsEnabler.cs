@@ -36,6 +36,15 @@ namespace Wijits.FastKoala.Transformations
         /// <remarks>Menu item entry point</remarks>
         public async Task<bool> EnableBuildTimeConfigTransformations()
         {
+            if (!Project.Saved || !Project.DTE.Solution.Saved ||
+                string.IsNullOrEmpty(Project.FullName) || string.IsNullOrEmpty(Project.DTE.Solution.FullName))
+            {
+                MessageBox.Show(_ownerWindow,
+                    "Please save the project and solution before enabling build-time transformations.",
+                    "Aborted", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+                return false;
+            }
+
             if (!CanEnableBuildTimeTransformations) return false;
 
             var message = "Are you sure you want to enable build-time config transformations? This will introduce changes to your project file.";
@@ -53,8 +62,6 @@ namespace Wijits.FastKoala.Transformations
 
             _logger.LogInfo("Enabling config transformations.");
             Environment.CurrentDirectory = Project.GetDirectory();
-
-            if (!Project.Saved) Project.Save();
 
             // 1. determine if web.config vs app.config
             if (string.IsNullOrEmpty(ProjectProperties.AppCfgType))
@@ -113,7 +120,6 @@ namespace Wijits.FastKoala.Transformations
         /// <remarks>Menu item entry point</remarks>
         public async Task AddMissingTransforms()
         {
-            if (!Project.Saved) Project.Save();
             var baseConfigFile = GetBaseConfigPath();
             if (baseConfigFile == null) return;
             await AddMissingTransforms(baseConfigFile);
