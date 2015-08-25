@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ConfigDirPrompt));
             this.label1 = new System.Windows.Forms.Label();
             this.txtConfigDir = new System.Windows.Forms.TextBox();
             this.cmdCancel = new System.Windows.Forms.Button();
@@ -85,6 +86,7 @@
             this.Controls.Add(this.txtConfigDir);
             this.Controls.Add(this.label1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "ConfigDirPrompt";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Config Folder";

@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AddBuildScriptNamePrompt));
             this.label1 = new System.Windows.Forms.Label();
             this.txtBuildScriptFileName = new System.Windows.Forms.TextBox();
             this.cmdCancel = new System.Windows.Forms.Button();
@@ -38,6 +39,8 @@
             // 
             // label1
             // 
+            this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(12, 9);
             this.label1.Name = "label1";
@@ -47,15 +50,18 @@
             // 
             // txtBuildScriptFileName
             // 
+            this.txtBuildScriptFileName.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.txtBuildScriptFileName.Location = new System.Drawing.Point(15, 26);
             this.txtBuildScriptFileName.Name = "txtBuildScriptFileName";
-            this.txtBuildScriptFileName.Size = new System.Drawing.Size(221, 20);
+            this.txtBuildScriptFileName.Size = new System.Drawing.Size(254, 20);
             this.txtBuildScriptFileName.TabIndex = 1;
             // 
             // cmdCancel
             // 
+            this.cmdCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cmdCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.cmdCancel.Location = new System.Drawing.Point(166, 86);
+            this.cmdCancel.Location = new System.Drawing.Point(194, 87);
             this.cmdCancel.Name = "cmdCancel";
             this.cmdCancel.Size = new System.Drawing.Size(75, 23);
             this.cmdCancel.TabIndex = 2;
@@ -64,8 +70,9 @@
             // 
             // cmdOK
             // 
+            this.cmdOK.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cmdOK.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.cmdOK.Location = new System.Drawing.Point(85, 86);
+            this.cmdOK.Location = new System.Drawing.Point(113, 87);
             this.cmdOK.Name = "cmdOK";
             this.cmdOK.Size = new System.Drawing.Size(75, 23);
             this.cmdOK.TabIndex = 3;
@@ -77,21 +84,21 @@
             this.rdoInvokeBefore.AutoSize = true;
             this.rdoInvokeBefore.Location = new System.Drawing.Point(15, 53);
             this.rdoInvokeBefore.Name = "rdoInvokeBefore";
-            this.rdoInvokeBefore.Size = new System.Drawing.Size(89, 17);
+            this.rdoInvokeBefore.Size = new System.Drawing.Size(92, 17);
             this.rdoInvokeBefore.TabIndex = 4;
-            this.rdoInvokeBefore.Text = "InvokeBefore";
+            this.rdoInvokeBefore.Text = "Invoke Before";
             this.rdoInvokeBefore.UseVisualStyleBackColor = true;
             // 
             // rdoInvokeAfter
             // 
             this.rdoInvokeAfter.AutoSize = true;
             this.rdoInvokeAfter.Checked = true;
-            this.rdoInvokeAfter.Location = new System.Drawing.Point(107, 53);
+            this.rdoInvokeAfter.Location = new System.Drawing.Point(113, 53);
             this.rdoInvokeAfter.Name = "rdoInvokeAfter";
-            this.rdoInvokeAfter.Size = new System.Drawing.Size(80, 17);
+            this.rdoInvokeAfter.Size = new System.Drawing.Size(83, 17);
             this.rdoInvokeAfter.TabIndex = 5;
             this.rdoInvokeAfter.TabStop = true;
-            this.rdoInvokeAfter.Text = "InvokeAfter";
+            this.rdoInvokeAfter.Text = "Invoke After";
             this.rdoInvokeAfter.UseVisualStyleBackColor = true;
             // 
             // AddBuildScriptNamePrompt
@@ -100,16 +107,18 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.cmdCancel;
-            this.ClientSize = new System.Drawing.Size(248, 122);
+            this.ClientSize = new System.Drawing.Size(281, 122);
             this.Controls.Add(this.rdoInvokeAfter);
             this.Controls.Add(this.rdoInvokeBefore);
             this.Controls.Add(this.cmdOK);
             this.Controls.Add(this.cmdCancel);
             this.Controls.Add(this.txtBuildScriptFileName);
             this.Controls.Add(this.label1);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "AddBuildScriptNamePrompt";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "Add Build Script";
+            this.Text = "Build Script";
             this.Load += new System.EventHandler(this.AddBuildScriptNamePrompt_Load);
             this.ResumeLayout(false);
             this.PerformLayout();

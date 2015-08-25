@@ -485,6 +485,7 @@ namespace Wijits.FastKoala.Transformations
             }
             set
             {
+                if (value == null) return;
                 _projectName = value.Name;
                 _projectUniqueName = value.UniqueName;
             }

@@ -37,6 +37,7 @@ namespace Wijits.FastKoala.BuildScriptInjections
         public async Task<bool> AddPowerShellScript(string containerDirectory, 
             string scriptFile = null, bool? invokeAfter = null)
         {
+            if (!(await EnsureProjectHasPowerShellEnabled())) return false;
             invokeAfter = invokeAfter ?? true;
             if (string.IsNullOrWhiteSpace(containerDirectory))
                 containerDirectory = Project.GetDirectory();
@@ -52,7 +53,6 @@ namespace Wijits.FastKoala.BuildScriptInjections
             if (!scriptFile.Contains(":") && !scriptFile.StartsWith("\\\\"))
                 scriptFile = Path.Combine(containerDirectory, scriptFile);
 
-            Project = await EnsureProjectHasPowerShellEnabled();
             if (Project == null) return false;
 
             File.WriteAllText(scriptFile, "# Write-Output \"`$MSBuildProjectDirectory=$MSBuildProjectDirectory\"");
@@ -62,11 +62,11 @@ namespace Wijits.FastKoala.BuildScriptInjections
             return true;
         }
 
-        private async Task<EnvDTE.Project> EnsureProjectHasPowerShellEnabled()
+        private async Task<bool> EnsureProjectHasPowerShellEnabled()
         {
             if (!_projectProperties.PowerShellBuildEnabled)
-                return await InjectPowerShellScriptSupport();
-            return Project;
+                return await InjectPowerShellScriptSupport() != null;
+            return true;
         }
 
         private async Task<EnvDTE.Project> InjectPowerShellScriptSupport()
@@ -202,6 +202,7 @@ namespace Wijits.FastKoala.BuildScriptInjections
             }
             set
             {
+                if (value == null) return;
                 _projectName = value.Name;
                 _projectUniqueName = value.UniqueName;
             }
