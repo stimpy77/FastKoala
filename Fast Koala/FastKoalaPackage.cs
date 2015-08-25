@@ -358,8 +358,10 @@ namespace Wijits.FastKoala
                 }
                 else containerDirectory = projectFolder;
 
-                var psBuildScriptSupportInjector = GetNewPowerShellBuildScriptSupportInjector();
-                await psBuildScriptSupportInjector.AddPowerShellScript(containerDirectory);
+                var psBuildScriptSupportInjector = await GetNewPowerShellBuildScriptSupportInjector();
+                if (await psBuildScriptSupportInjector.AddPowerShellScript(containerDirectory))
+                    LogSuccess();
+                else LogCancelOrAbort();
             }
             catch (Exception exception)
             {
@@ -372,11 +374,23 @@ namespace Wijits.FastKoala
             
         }
 
-        private PSBuildScriptSupportInjector GetNewPowerShellBuildScriptSupportInjector()
+        private void LogCancelOrAbort()
+        {
+            VsEnvironment.Dte.GetLogger().LogWarn("Action was canceled or aborted.");
+        }
+
+        private void LogSuccess()
+        {
+            VsEnvironment.Dte.GetLogger().LogInfo("Done.");
+        }
+
+        private async Task<PSBuildScriptSupportInjector> GetNewPowerShellBuildScriptSupportInjector()
         {
             var logger = Dte.GetLogger();
             var project = GetSelectedProject();
-            var result = new PSBuildScriptSupportInjector(project, logger, GetNativeWindow());
+            var result = new PSBuildScriptSupportInjector(project, 
+                await VsFileSystemManipulatorFactory.GetFileSystemManipulatorForEnvironment(project),
+                logger, GetNativeWindow());
             return result;
         }
         #endregion
@@ -486,7 +500,10 @@ namespace Wijits.FastKoala
 
             try
             {
-                await transformationsEnabler.EnableBuildTimeConfigTransformations();
+                if (await transformationsEnabler.EnableBuildTimeConfigTransformations())
+                    LogSuccess();
+                else LogCancelOrAbort();
+                
             }
             catch (Exception exception)
             {

@@ -9,6 +9,7 @@ using System.Xml;
 using EnvDTE;
 using Wijits.FastKoala.BuildScriptSupport;
 using Wijits.FastKoala.Logging;
+using Wijits.FastKoala.SourceControl;
 using Wijits.FastKoala.Utilities;
 // ReSharper disable LocalizableElement
 // ReSharper disable SimplifyLinqExpression
@@ -23,11 +24,13 @@ namespace Wijits.FastKoala.BuildScriptInjections
         private readonly IWin32Window _ownerWindow;
         private string _projectUniqueName;
         private DTE _dte;
+        private ISccBasicFileSystem _io;
 
-        public PSBuildScriptSupportInjector(EnvDTE.Project project, ILogger logger, IWin32Window ownerWindow)
+        public PSBuildScriptSupportInjector(EnvDTE.Project project, ISccBasicFileSystem io, ILogger logger, IWin32Window ownerWindow)
         {
             _dte = project.DTE;
             _projectUniqueName = project.UniqueName;
+            _io = io;
             _projectName = project.Name;
             _projectProperties = new ProjectProperties(project);
             _logger = logger;
@@ -38,18 +41,23 @@ namespace Wijits.FastKoala.BuildScriptInjections
             string scriptFile = null, bool? invokeAfter = null)
         {
             if (!(await EnsureProjectHasPowerShellEnabled())) return false;
+            _logger.LogInfo("Begin adding PowerShell script");
             invokeAfter = invokeAfter ?? true;
             if (string.IsNullOrWhiteSpace(containerDirectory))
                 containerDirectory = Project.GetDirectory();
 
             if (string.IsNullOrWhiteSpace(scriptFile))
             {
+                _logger.LogInfo("Prompting for file name");
                 var dialog = new AddBuildScriptNamePrompt(containerDirectory, ".ps1");
                 var dialogResult = dialog.ShowDialog(VsEnvironment.OwnerWindow);
                 if (dialogResult == DialogResult.Cancel) return false;
                 scriptFile = dialog.FileName;
+                _logger.LogInfo("File name chosen: " + scriptFile);
                 invokeAfter = dialog.InvokeAfter;
+                _logger.LogInfo("Selected invoke sequence: Invoke" + (dialog.InvokeAfter ? "After" : "Before") + " (..the build)");
             }
+            var scriptFileName = scriptFile;
             if (!scriptFile.Contains(":") && !scriptFile.StartsWith("\\\\"))
                 scriptFile = Path.Combine(containerDirectory, scriptFile);
 
@@ -57,8 +65,9 @@ namespace Wijits.FastKoala.BuildScriptInjections
 
             File.WriteAllText(scriptFile, "# Write-Output \"`$MSBuildProjectDirectory=$MSBuildProjectDirectory\"");
             var addedItem = Project.ProjectItems.AddFromFile(scriptFile);
-            addedItem.Properties.Item("ItemType").Value 
+            addedItem.Properties.Item("ItemType").Value
                 = invokeAfter.Value ? "InvokeAfter" : "InvokeBefore";
+            _logger.LogInfo("PowerShell script added to project: " + scriptFileName);
             return true;
         }
 
@@ -71,9 +80,11 @@ namespace Wijits.FastKoala.BuildScriptInjections
 
         private async Task<EnvDTE.Project> InjectPowerShellScriptSupport()
         {
+            _logger.LogInfo("Injecting PowerShell rich execution support to project");
             if (!Project.Saved || !Project.DTE.Solution.Saved || 
                 string.IsNullOrEmpty(Project.FullName) || string.IsNullOrEmpty(Project.DTE.Solution.FullName))
             {
+                _logger.LogInfo("Project or solution is not saved. Aborting.");
                 MessageBox.Show(_ownerWindow,
                     "Please save the project and solution before adding PowerShell build scripts.",
                     "Aborted", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
@@ -188,7 +199,9 @@ namespace Wijits.FastKoala.BuildScriptInjections
     ]]></Code>
         </Task>"
                       + projXml.Substring(injectLocation);
+            if (await _io.ItemIsUnderSourceControl(projectRootPath)) await _io.Checkout(projectRootPath);
             File.WriteAllText(projectRootPath, projXml);
+            _logger.LogInfo("Project file is now updated.");
             VsEnvironment.Dte.ReloadJustUnloadedProject();
             return VsEnvironment.Dte.GetProjectByFullName(projectRootPath);
         }

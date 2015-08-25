@@ -45,6 +45,12 @@ namespace Wijits.FastKoala.BuildScriptSupport
 
         }
 
+        protected override void OnValidating(CancelEventArgs e)
+        {
+            e.Cancel = true;
+            base.OnValidating(e);
+        }
+
         public string FileExtension { get; set; }
 
         public bool InvokeAfter
