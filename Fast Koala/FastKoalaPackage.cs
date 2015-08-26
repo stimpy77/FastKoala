@@ -251,6 +251,7 @@ namespace Wijits.FastKoala
                 if (project != null)
                 {
                     var transforms = await GetTransformationsEnabler(project);
+                    if (transforms == null) return;
                     var properties = transforms.ProjectProperties;
                     if (transforms.HasBuildTimeTransformationsEnabled && 
                         properties.InlineAppCfgTransforms == true &&
@@ -275,6 +276,16 @@ namespace Wijits.FastKoala
 
         private async Task<BuildTimeTransformationsEnabler> GetTransformationsEnabler(Project project)
         {
+            string projectName = null;
+            string projectFullName = null;
+            try
+            {
+                projectName = project.Name;
+                projectFullName = project.FullName;
+            }
+            catch { }
+            if (string.IsNullOrEmpty(projectName) || string.IsNullOrEmpty(projectFullName))
+                return null;
             var logger = Dte.GetLogger();
             var io = await VsFileSystemManipulatorFactory.GetFileSystemManipulatorForEnvironment(project);
             var nativeWindow = GetNativeWindow();
@@ -434,6 +445,7 @@ namespace Wijits.FastKoala
                 if (project == null) return;
 
                 var transformationsEnabler = await GetTransformationsEnabler(project);
+                if (transformationsEnabler == null) return;
                 if (!transformationsEnabler.CanEnableBuildTimeTransformations)
                     return;
 
@@ -470,6 +482,7 @@ namespace Wijits.FastKoala
                 if (project == null) return;
 
                 var transformationsEnabler = await GetTransformationsEnabler(project);
+                if (transformationsEnabler == null) return;
                 if (!transformationsEnabler.CanEnableBuildTimeTransformations)
                     return;
 
@@ -495,6 +508,7 @@ namespace Wijits.FastKoala
             var project = GetSelectedProject();
             if (project == null) return;
             var transformationsEnabler = await GetTransformationsEnabler(project);
+            if (transformationsEnabler == null) return;
             Cursor previousCursor = Cursor.Current;
             Cursor.Current = Cursors.WaitCursor;
 
@@ -551,6 +565,7 @@ namespace Wijits.FastKoala
             var project = GetSelectedProject();
             if (project == null) return;
             var transformationsEnabler = await GetTransformationsEnabler(project);
+            if (transformationsEnabler == null) return;
             if (transformationsEnabler.HasMissingTransforms)
             {
                 menuCommand.Visible = true;
@@ -575,6 +590,7 @@ namespace Wijits.FastKoala
                 var project = GetSelectedProject();
                 if (project == null) return;
                 var transformationsEnabler = await GetTransformationsEnabler(project);
+                if (transformationsEnabler == null) return;
                 await transformationsEnabler.AddMissingTransforms();
             }
             catch (Exception exception)
