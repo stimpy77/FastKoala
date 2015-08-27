@@ -67,14 +67,14 @@ The complete and simple explanation of the core method of how this is accomplish
 
 NuGet packages or other automated tasks that make tweaks to the web.config will need to be managed more carefully after Fast Koala is applied to a project. 
 
-#### If you are applying a NuGet package
+#### If you know changes will be made to web.config
 
 1. Build the project first to generate the Web.config before applying the package.
 2. Back up the Web.config file to create a copy that you can use below
 3. Apply the package
 4. Perform a diff (use WinMerge or Beyond Compare) between the backup made in #2 and the Web.config as it is now. Manually observe the changes and migrate these changes to the Web.Base.config file.
 
-#### If you are a NuGet package author
+#### If you are an automation author
 
 The `AppConfigBaseFileFullPath` MSBuild property in the .csproj/.vbproj file is available for NuGet authors to modify the Web.config if Fast Koala's "Enable Build-Time transfomations" has been applied. It consists of:
 
