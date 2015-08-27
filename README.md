@@ -76,7 +76,7 @@ NuGet packages or other automated tasks that make tweaks to the web.config will 
 
 #### If you are an automation author
 
-The `AppConfigBaseFileFullPath` MSBuild property in the .csproj/.vbproj file is available for NuGet authors to modify the Web.config if Fast Koala's "Enable Build-Time transfomations" has been applied. It consists of:
+The `InlineAppCfgTransforms` and `AppConfigBaseFileFullPath` MSBuild properties in the .csproj/.vbproj file is available for NuGet authors to modify the Web.config if Fast Koala's "Enable Build-Time transfomations" has been applied. `InlineAppCfgTransforms` identifies whether inline transformations has been applied. `AppConfigBaseFileFullPath` ultimately consists of:
 
     $(MSBuildProjectDirectory)\$(ConfigDir)\$(AppCfgType).Base.config
 
