@@ -72,9 +72,11 @@ namespace Wijits.FastKoala.Transformations
             // 2. determine if need to use inline transformations or bin transformations
             //  >> if web or clickonce, inline is mandatory
             var inlineTransformations = ProjectProperties.InlineAppCfgTransforms
-                                        ??
-                                        (ProjectProperties.InlineAppCfgTransforms =
+                                        ?? (ProjectProperties.InlineAppCfgTransforms =
                                             (ProjectIsWebType || ProjectLooksLikeClickOnce)).Value;
+            if (!inlineTransformations && ProjectLooksLikeClickOnce)
+                // we're converting existing build-time transforms to 'inline'
+                inlineTransformations = (bool)(ProjectProperties.InlineAppCfgTransforms = true);
 
             bool prepresult;
 
@@ -361,10 +363,14 @@ namespace Wijits.FastKoala.Transformations
                         // check to see if it's the Visual Studio default (unmodified)
                         // if so, replace it
                         // if not, move it
-                        var oldXfrmContent = File.ReadAllText(oldxfrmpath);
-                        var defaultXfrmContent = GetManifestResourceStreamContent(
-                            @"Transforms\" + (oldxfrmname.Replace(".config", ".Default.config")));
-                        var isUnmodifiedDefault = oldXfrmContent == defaultXfrmContent;
+                        var isUnmodifiedDefault = false;
+                        if (ProjectProperties.AppCfgType.ToLower() == "web")
+                        {
+                            var oldXfrmContent = File.ReadAllText(oldxfrmpath);
+                            var defaultXfrmContent = GetManifestResourceStreamContent(
+                                @"Transforms\" + (oldxfrmname.Replace(".config", ".Default.config")));
+                            isUnmodifiedDefault = oldXfrmContent == defaultXfrmContent;
+                        }
                         if (isUnmodifiedDefault)
                         {
                             await _io.Delete(oldxfrmpath);
@@ -498,11 +504,25 @@ namespace Wijits.FastKoala.Transformations
                 // ASP.NET 5 projects (not supported) seem to be using the .xproj file extension
                 if (Project.FullName.ToLower().EndsWith(".xproj")) return false;
 
-                return !HasBuildTimeTransformationsEnabled &&
+                var defaultResult = !HasBuildTimeTransformationsEnabled &&
                        !Project.IsType(ProjectTypes.WebSite) &&
                        !string.IsNullOrWhiteSpace(Project.FullName) &&
                        !Project.FullName.Contains("://") &&
                        File.Exists(Project.FullName);
+                return defaultResult ||
+                       (HasBuildTimeTransformationsEnabled &&
+                        (Project.GetProjectTypeGuids()
+                            .Split(';')
+                            .Select(pt => new Guid(pt))
+                            .Any(
+                                pt =>
+                                    new[]
+                                    {
+                                        ProjectTypes.WindowsCSharp, 
+                                        ProjectTypes.WindowsVB,
+                                        ProjectTypes.WindowsPresentationFoundation
+                                    }.Contains(pt)))) &&
+                        ProjectProperties.InlineAppCfgTransforms != true;
             }
         }
 
