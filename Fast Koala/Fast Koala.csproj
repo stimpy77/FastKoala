@@ -150,8 +150,10 @@
     <Compile Include="BuildScriptSupport\AddBuildScriptNamePrompt.Designer.cs">
       <DependentUpon>AddBuildScriptNamePrompt.cs</DependentUpon>
     </Compile>
-    <Compile Include="BuildScriptSupport\TargetsScriptInjector.cs" />
     <Compile Include="BuildScriptSupport\PSBuildScriptSupportInjector.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="BuildScriptSupport\TargetsScriptInjector.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Events\AfterLoadProjectEventArgs.cs" />
