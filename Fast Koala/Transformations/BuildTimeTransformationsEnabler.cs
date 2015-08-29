@@ -150,20 +150,32 @@ namespace Wijits.FastKoala.Transformations
             // ReSharper enable InconsistentNaming
 
             var trWeb = transformOnBuildTarget.AddTask("TransformXml");
-            trWeb.Condition = "'$(AppCfgType)' == 'Web'";
+            trWeb.Condition = @"'$(AppCfgType)' == 'Web' and Exists('$(ConfigDir)\Web.Base.config') and Exists('$(ConfigDir)\Web.$(Configuration).config')";
             trWeb.SetParameter("Source", @"$(ConfigDir)\Web.Base.config");
             trWeb.SetParameter("Transform", @"$(ConfigDir)\Web.$(Configuration).config");
             trWeb.SetParameter("Destination", @"Web.config");
             var trClickOnce = transformOnBuildTarget.AddTask("TransformXml");
-            trClickOnce.Condition = "'$(AppCfgType)' == 'App' and $(InlineAppCfgTransforms) == true";
+            trClickOnce.Condition = @"'$(AppCfgType)' == 'App' and $(InlineAppCfgTransforms) == true and Exists('$(ConfigDir)\App.Base.config') and Exists('$(ConfigDir)\App.$(Configuration).config')";
             trClickOnce.SetParameter("Source", @"$(ConfigDir)\App.Base.config");
             trClickOnce.SetParameter("Transform", @"$(ConfigDir)\App.$(Configuration).config");
             trClickOnce.SetParameter("Destination", @"App.config");
             var trBinOut = transformOnBuildTarget.AddTask("TransformXml");
-            trBinOut.Condition = "'$(AppCfgType)' == 'App' and $(InlineAppCfgTransforms) != true";
+            trBinOut.Condition = "'$(AppCfgType)' == 'App' and $(InlineAppCfgTransforms) != true and Exists('App.config') and Exists('App.$(Configuration).config')";
             trBinOut.SetParameter("Source", @"App.config");
             trBinOut.SetParameter("Transform", @"App.$(Configuration).config");
             trBinOut.SetParameter("Destination", @"$(OutDir)$(AssemblyName).$(outputTypeExtension).config");
+            var trWebAlt = transformOnBuildTarget.AddTask("Copy");
+            trWebAlt.Condition = @"'$(AppCfgType)' == 'Web' and Exists('$(ConfigDir)\Web.Base.config') and !Exists('$(ConfigDir)\Web.$(Configuration).config')";
+            trWebAlt.SetParameter("SourceFiles", @"$(ConfigDir)\Web.Base.config");
+            trWebAlt.SetParameter("DestinationFiles", @"Web.config");
+            var trClickOnceAlt = transformOnBuildTarget.AddTask("Copy");
+            trClickOnceAlt.Condition = @"'$(AppCfgType)' == 'App' and $(InlineAppCfgTransforms) == true and Exists('$(ConfigDir)\App.Base.config') and !Exists('$(ConfigDir)\App.$(Configuration).config')";
+            trClickOnceAlt.SetParameter("SourceFiles", @"$(ConfigDir)\App.Base.config");
+            trClickOnceAlt.SetParameter("DestinationFiles", @"App.config");
+            var trBinOutAlt = transformOnBuildTarget.AddTask("Copy");
+            trBinOutAlt.Condition = "'$(AppCfgType)' == 'App' and $(InlineAppCfgTransforms) != true and Exists('App.config') and !Exists('App.$(Configuration).config')";
+            trBinOutAlt.SetParameter("SourceFiles", @"App.config");
+            trBinOutAlt.SetParameter("DestinationFiles", @"$(OutDir)$(AssemblyName).$(outputTypeExtension).config");
         }
 
         private void EnsureTransformXmlTaskInProject()
