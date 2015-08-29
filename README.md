@@ -67,42 +67,20 @@ The complete and simple explanation of the core method of how this is accomplish
 
 NuGet packages or other automated tasks that make tweaks to the web.config will need to be managed more carefully after Fast Koala is applied to a project. 
 
-#### If you are applying a NuGet package
+#### If you know changes will be made to web.config
 
 1. Build the project first to generate the Web.config before applying the package.
 2. Back up the Web.config file to create a copy that you can use below
 3. Apply the package
 4. Perform a diff (use WinMerge or Beyond Compare) between the backup made in #2 and the Web.config as it is now. Manually observe the changes and migrate these changes to the Web.Base.config file.
 
-#### If you are a NuGet package author
+#### If you are an automation author
 
-The `AppConfigBaseFileFullPath` MSBuild property in the .csproj/.vbproj file is available for NuGet authors to modify the Web.config if Fast Koala's "Enable Build-Time transfomations" has been applied.
+The `InlineAppCfgTransforms` and `AppConfigBaseFileFullPath` MSBuild properties in the .csproj/.vbproj file is available for NuGet authors to modify the Web.config if Fast Koala's "Enable Build-Time transfomations" has been applied. `InlineAppCfgTransforms` identifies whether inline transformations has been applied. `AppConfigBaseFileFullPath` ultimately consists of:
 
-Fast Koala uses these MSBuild project (.csproj/.vbproj file) properties to build the path to Web.Base.config:
+    $(MSBuildProjectDirectory)\$(ConfigDir)\$(AppCfgType).Base.config
 
-    <!-- if not true, Web.config itself is the base config -->
-    <InlineAppCfgTransforms>True</InlineAppCfgTransforms> 
-    
-    <!-- Web.config vs App.config -->
-    <AppCfgType>Web</AppCfgType> 
-    
-    <!-- relative path to the parent directory of the base config -->
-    <ConfigDir>App_Config</ConfigDir> 
-    
-(Fast Koala does not use a FastKoala or FK or other prefix on the properties simply because once the change is initially applied Fast Koala is no longer involved. The changes made by Fast Koala are MSBuild script tweaks to make the .csproj/.vbproj smarter about your Web.config and, in Fast Koala's creator's opinion, Microsoft should have done it exactly this way.)
-
-So, the logic to find the base config file would be:
-
-* If the MSBuild property **InlineAppCfgTransforms** is not true (not if it is false, because if it is not true it probably doesn't exist so it would be null or empty string) then
-    * the base config file is either App.config or Web.config
-* otherwise,
-    * the base config file is at $(ConfigDir)\$(AppCfgType).Base.config
-
-So, a complete path is built as an MSBuild property as such, which Fast Koala also adds as $(AppConfigBaseFileFullPath):
-
-    <AppConfigBaseFileFullPath Condition="Exists('$(MSBuildProjectDirectory)\App.config')">$(MSBuildProjectDirectory)\App.config</AppConfigBaseFileFullPath>
-    <AppConfigBaseFileFullPath Condition="Exists('$(MSBuildProjectDirectory)\Web.config')">$(MSBuildProjectDirectory)\Web.config</AppConfigBaseFileFullPath>
-    <AppConfigBaseFileFullPath Condition="'$(InlineAppCfgTransforms)' == 'true'">$(MSBuildProjectDirectory)\$(ConfigDir)\$(AppCfgType).Base.config</AppConfigBaseFileFullPath>
+You will need to either evaluate the MSBuild project property or load the project's XML and parse these properties out yourself.
 
 ### Development notes
 
