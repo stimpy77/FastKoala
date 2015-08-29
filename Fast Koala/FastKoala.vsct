@@ -110,6 +110,24 @@
         </Strings>
       </Button>
 
+      <Button guid="guidFastKoalaProjAddCmdSet" id="cmdIdFastKoalaAddMSBuildScript" priority="0x1100" type="Button">
+        <Parent guid="guidFastKoalaProjAddCmdSet" id="grpIdFastKoalaAddBuildScript" />
+        <Icon guid="guidImages" id="bmpPic4" />
+        <Strings>
+          <ButtonText>Project Extension (.targets)</ButtonText>
+        </Strings>
+      </Button>
+
+      <Button guid="guidFastKoalaProjAddCmdSet" id="cmdIdFastKoalaAddNodeJSScript" priority="0x1100" type="Button">
+        <Parent guid="guidFastKoalaProjAddCmdSet" id="grpIdFastKoalaAddBuildScript" />
+        <Icon guid="guidImages" id="bmpPic4" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Strings>
+          <ButtonText>NodeJS Script (.js)</ButtonText>
+        </Strings>
+      </Button>
+
     </Buttons>
 
     <Menus>
@@ -160,6 +178,8 @@
       <IDSymbol name="mnuFastKoalaProjAddMenu" value="0x2011" />
       <IDSymbol name="grpIdFastKoalaAddBuildScript" value="0x2100"/>
       <IDSymbol name="cmdIdFastKoalaAddPowerShellScript" value="0x2101" />
+      <IDSymbol name="cmdIdFastKoalaAddMSBuildScript" value="0x2102" />
+      <IDSymbol name="cmdIdFastKoalaAddNodeJSScript" value="0x2103" />
     </GuidSymbol>
 
 

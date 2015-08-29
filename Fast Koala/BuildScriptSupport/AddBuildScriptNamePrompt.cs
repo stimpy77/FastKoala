@@ -63,5 +63,11 @@ namespace Wijits.FastKoala.BuildScriptSupport
             get { return txtBuildScriptFileName.Text; }
             set { txtBuildScriptFileName.Text = value; }
         }
+
+        public bool HideInvokeBeforeAfter
+        {
+            get { return grpInvokeBeforeAfter.Visible; }
+            set { grpInvokeBeforeAfter.Visible = !value; }
+        }
     }
 }

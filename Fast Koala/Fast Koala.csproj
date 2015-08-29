@@ -150,6 +150,7 @@
     <Compile Include="BuildScriptSupport\AddBuildScriptNamePrompt.Designer.cs">
       <DependentUpon>AddBuildScriptNamePrompt.cs</DependentUpon>
     </Compile>
+    <Compile Include="BuildScriptSupport\TargetsScriptInjector.cs" />
     <Compile Include="BuildScriptSupport\PSBuildScriptSupportInjector.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -216,6 +217,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Resources\ps.png" />
     <EmbeddedResource Include="Resources\Transforms\Web.Debug.Default.config" />
     <EmbeddedResource Include="Resources\Transforms\Web.Debug.config" />
     <EmbeddedResource Include="Resources\Transforms\Web.Release.Default.config" />

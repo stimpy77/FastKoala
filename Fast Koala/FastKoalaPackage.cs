@@ -106,6 +106,22 @@ namespace Wijits.FastKoala
             addPowerShellScriptMenuItem.BeforeQueryStatus +=
                 AddPowerShellScriptMenuItem_BeforeQueryStatus;
             mcs.AddCommand(addPowerShellScriptMenuItem);
+
+            var addMSBuildScriptCmd = new CommandID(GuidList.guidFastKoalaProjAddCmdSet,
+                (int)PkgCmdIDList.cmdIdFastKoalaAddMSBuildScript);
+            var addMSBuildScriptMenuItem =
+                new OleMenuCommand(AddMSBuildScriptMenuItem_Invoke, addMSBuildScriptCmd);
+            addMSBuildScriptMenuItem.BeforeQueryStatus +=
+                AddMSBuildScriptMenuItem_BeforeQueryStatus;
+            mcs.AddCommand(addMSBuildScriptMenuItem);
+
+            var addNodeJSScriptCmd = new CommandID(GuidList.guidFastKoalaProjAddCmdSet,
+                (int)PkgCmdIDList.cmdIdFastKoalaAddNodeJSScript);
+            var addNodeJSScriptMenuItem =
+                new OleMenuCommand(AddNodeJSScriptMenuItem_Invoke, addNodeJSScriptCmd);
+            addNodeJSScriptMenuItem.BeforeQueryStatus +=
+                AddNodeJSScriptMenuItem_BeforeQueryStatus;
+            mcs.AddCommand(addNodeJSScriptMenuItem);
         }
 
         private void SubscribeDteEvents()
@@ -384,27 +400,85 @@ namespace Wijits.FastKoala
             }
             
         }
+        #endregion
 
-        private void LogCancelOrAbort()
+
+#region Add .targets file
+        private void AddMSBuildScriptMenuItem_BeforeQueryStatus(object sender, EventArgs e)
         {
-            VsEnvironment.Dte.GetLogger().LogWarn("Action was canceled or aborted.");
+            // anything goes?
         }
 
-        private void LogSuccess()
+        private async void AddMSBuildScriptMenuItem_Invoke(object sender, EventArgs e)
         {
-            VsEnvironment.Dte.GetLogger().LogInfo("Done.");
+            try
+            {
+                // get the menu that fired the event
+                var menuCommand = sender as OleMenuCommand;
+                if (menuCommand == null) return;
+
+                IVsHierarchy hierarchy;
+                uint itemid;
+
+                var project = GetSelectedProject();
+                var projectFolder = project.GetDirectory();
+                if (project == null) return;
+
+                var isProject = (!IsSingleProjectItemSelection(out hierarchy, out itemid));
+                string containerDirectory;
+                if (!isProject)
+                {
+                    // Get the file path
+                    string itemFullPath = null;
+                    ((IVsProject)hierarchy).GetMkDocument(itemid, out itemFullPath);
+                    containerDirectory = new DirectoryInfo(itemFullPath).FullName;
+                }
+                else containerDirectory = projectFolder;
+
+                var targBuildScriptSupportInjector = await GetNewTargetsBuildScriptSupportInjector();
+                if (await targBuildScriptSupportInjector.AddProjectInclude(containerDirectory))
+                    LogSuccess();
+                else LogCancelOrAbort();
+            }
+            catch (Exception exception)
+            {
+#if DEBUG
+                // what the heck just happened?
+                if (System.Diagnostics.Debugger.IsAttached) throw;
+#endif
+                LogAndPromptUnhandledError(exception);
+            }
         }
 
-        private async Task<PSBuildScriptSupportInjector> GetNewPowerShellBuildScriptSupportInjector()
+        private async Task<TargetsScriptInjector> GetNewTargetsBuildScriptSupportInjector()
         {
             var logger = Dte.GetLogger();
             var project = GetSelectedProject();
-            var result = new PSBuildScriptSupportInjector(project, 
+            var result = new TargetsScriptInjector(project,
                 await VsFileSystemManipulatorFactory.GetFileSystemManipulatorForEnvironment(project),
                 logger, GetNativeWindow());
             return result;
         }
-        #endregion
+#endregion
+
+#region Add NodeJS file
+        private void AddNodeJSScriptMenuItem_BeforeQueryStatus(object sender, EventArgs e)
+        {
+            var menuCommand = sender as OleMenuCommand;
+            if (menuCommand == null) return;
+
+            // anything goes?
+            
+            //(temporarily hide)
+            menuCommand.Visible = false;
+            menuCommand.Enabled = false;
+        }
+
+        private void AddNodeJSScriptMenuItem_Invoke(object sender, EventArgs e)
+        {
+            MessageBox.Show(GetNativeWindow(), "Not implemented", "Not implemented");
+        }
+#endregion
 
 #region EnableBuildTimeTransformations
 
@@ -690,6 +764,26 @@ namespace Wijits.FastKoala
                 MessageBoxIcon.Error);
             logger.LogInfo("[Your response: '" + response.ToString() + "'] .. " 
                 + (response == DialogResult.No ? "*snif*" : "Thanks"));
+        }
+
+        private void LogCancelOrAbort()
+        {
+            VsEnvironment.Dte.GetLogger().LogWarn("Action was canceled or aborted.");
+        }
+
+        private void LogSuccess()
+        {
+            VsEnvironment.Dte.GetLogger().LogInfo("Done.");
+        }
+
+        private async Task<PSBuildScriptSupportInjector> GetNewPowerShellBuildScriptSupportInjector()
+        {
+            var logger = Dte.GetLogger();
+            var project = GetSelectedProject();
+            var result = new PSBuildScriptSupportInjector(project, 
+                await VsFileSystemManipulatorFactory.GetFileSystemManipulatorForEnvironment(project),
+                logger, GetNativeWindow());
+            return result;
         }
     }
 }
