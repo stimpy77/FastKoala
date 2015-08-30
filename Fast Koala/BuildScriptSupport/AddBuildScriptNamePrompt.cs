@@ -56,6 +56,11 @@ namespace Wijits.FastKoala.BuildScriptSupport
         public bool InvokeAfter
         {
             get { return rdoInvokeAfter.Checked; }
+            set
+            {
+                rdoInvokeAfter.Checked = value;
+                rdoInvokeBefore.Checked = !value;
+            }
         }
 
         public string FileName

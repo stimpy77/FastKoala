@@ -63,11 +63,17 @@ namespace Wijits.FastKoala.BuildScriptInjections
 
             if (Project == null) return false;
 
-            File.WriteAllText(scriptFile, "# Write-Output \"`$MSBuildProjectDirectory=$MSBuildProjectDirectory\"");
+            File.WriteAllText(scriptFile, @"# MSBuild project properties are exposed at build-time. Example:
+Write-Output ""`$MSBuildProjectDirectory = `""$MSBuildProjectDirectory`""""");
             var addedItem = Project.ProjectItems.AddFromFile(scriptFile);
             addedItem.Properties.Item("ItemType").Value
                 = invokeAfter.Value ? "InvokeAfter" : "InvokeBefore";
             _logger.LogInfo("PowerShell script added to project: " + scriptFileName);
+            Task.Run(() =>
+            {
+                System.Threading.Thread.Sleep(250);
+                _dte.ExecuteCommand("File.OpenFile", "\"" + scriptFile + "\"");
+            });
             return true;
         }
 
@@ -144,6 +150,7 @@ namespace Wijits.FastKoala.BuildScriptInjections
         <Using Namespace=""Microsoft.Build.Evaluation"" />
         <Code Type=""Fragment"" Language=""cs""><![CDATA[
         if (!ScriptFile.ToLower().EndsWith("".ps1"")) return true;
+		BuildEngine.LogMessageEvent(new BuildMessageEventArgs(""Executing with PowerShell: "" + ScriptFile, """", """", MessageImportance.High));
         Project project = ProjectCollection.GlobalProjectCollection.GetLoadedProjects(BuildEngine.ProjectFileOfTaskNode).FirstOrDefault()
             ?? new Project(BuildEngine.ProjectFileOfTaskNode);
         if (!ScriptFile.Contains("":"") && !ScriptFile.StartsWith(""\\\\""))
@@ -177,8 +184,6 @@ namespace Wijits.FastKoala.BuildScriptInjections
                 using (Pipeline pipeline = runspace.CreatePipeline()) {
                     scriptInvoker.Invoke(vars.ToString()); 
                     var fileName = ScriptFile.Substring(project.DirectoryPath.Length + 1);
-                    BuildEngine.LogMessageEvent(new BuildMessageEventArgs(
-                        ""Executing script file: "" + fileName, """", """", MessageImportance.High));
                     pipeline.Commands.AddScript(""& \"""" + ScriptFile + ""\""""); 
                     try {
                         var results = pipeline.Invoke();

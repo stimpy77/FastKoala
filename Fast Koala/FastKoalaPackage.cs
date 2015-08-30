@@ -470,14 +470,51 @@ namespace Wijits.FastKoala
             // anything goes?
             
             //(temporarily hide)
-            menuCommand.Visible = false;
-            menuCommand.Enabled = false;
+            //menuCommand.Visible = false;
+            //menuCommand.Enabled = false;
         }
 
-        private void AddNodeJSScriptMenuItem_Invoke(object sender, EventArgs e)
+        private async void AddNodeJSScriptMenuItem_Invoke(object sender, EventArgs e)
         {
-            MessageBox.Show(GetNativeWindow(), "Not implemented", "Not implemented");
+            try
+            {
+                // get the menu that fired the event
+                var menuCommand = sender as OleMenuCommand;
+                if (menuCommand == null) return;
+
+                IVsHierarchy hierarchy;
+                uint itemid;
+
+                var project = GetSelectedProject();
+                var projectFolder = project.GetDirectory();
+                if (project == null) return;
+
+                var isProject = (!IsSingleProjectItemSelection(out hierarchy, out itemid));
+                string containerDirectory;
+                if (!isProject)
+                {
+                    // Get the file path
+                    string itemFullPath = null;
+                    ((IVsProject)hierarchy).GetMkDocument(itemid, out itemFullPath);
+                    containerDirectory = new DirectoryInfo(itemFullPath).FullName;
+                }
+                else containerDirectory = projectFolder;
+
+                var nodeJSBuildScriptSupportInjector = await GetNewNodeJSBuildScriptSupportInjector();
+                if (await nodeJSBuildScriptSupportInjector.AddNodeJSScript(containerDirectory))
+                    LogSuccess();
+                else LogCancelOrAbort();
+            }
+            catch (Exception exception)
+            {
+#if DEBUG
+                // what the heck just happened?
+                if (System.Diagnostics.Debugger.IsAttached) throw;
+#endif
+                LogAndPromptUnhandledError(exception);
+            }
         }
+
 #endregion
 
 #region EnableBuildTimeTransformations
@@ -781,6 +818,15 @@ namespace Wijits.FastKoala
             var logger = Dte.GetLogger();
             var project = GetSelectedProject();
             var result = new PSBuildScriptSupportInjector(project, 
+                await VsFileSystemManipulatorFactory.GetFileSystemManipulatorForEnvironment(project),
+                logger, GetNativeWindow());
+            return result;
+        }
+        private async Task<NodeJSBuildScriptSupportInjector> GetNewNodeJSBuildScriptSupportInjector()
+        {
+            var logger = Dte.GetLogger();
+            var project = GetSelectedProject();
+            var result = new NodeJSBuildScriptSupportInjector(project,
                 await VsFileSystemManipulatorFactory.GetFileSystemManipulatorForEnvironment(project),
                 logger, GetNativeWindow());
             return result;

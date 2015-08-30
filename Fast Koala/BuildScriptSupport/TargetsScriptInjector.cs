@@ -60,8 +60,7 @@ namespace Wijits.FastKoala.BuildScriptInjections
                 if (dialogResult == DialogResult.Cancel) return false;
                 scriptFile = dialog.FileName;
                 _logger.LogInfo("File name chosen: " + scriptFile);
-                dialogResult = MessageBox.Show(_ownerWindow, @"
-        !! IMPORTANT !!
+                dialogResult = MessageBox.Show(_ownerWindow, @"        !! IMPORTANT !!
 
 You must not move, rename, or remove this file once it has been added to the project. By adding this file you are extending the project file itself. If you must change the filename or location, you must update the project XML directly where <Import> references it.",
                     "This addition is permanent", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning);
@@ -92,6 +91,11 @@ You must not move, rename, or remove this file once it has been added to the pro
             var addedItem = Project.ProjectItems.AddFromFile(scriptFile);
             addedItem.Properties.Item("ItemType").Value = "None";
             _logger.LogInfo("Project include file added to project: " + scriptFileName);
+            Task.Run(() =>
+            {
+                System.Threading.Thread.Sleep(250);
+                _dte.ExecuteCommand("File.OpenFile", "\"" + scriptFile + "\"");
+            });
             return true;
         }
 

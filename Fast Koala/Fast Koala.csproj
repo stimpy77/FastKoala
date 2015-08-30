@@ -150,6 +150,7 @@
     <Compile Include="BuildScriptSupport\AddBuildScriptNamePrompt.Designer.cs">
       <DependentUpon>AddBuildScriptNamePrompt.cs</DependentUpon>
     </Compile>
+    <Compile Include="BuildScriptSupport\NodeJSBuildScriptSupportInjector.cs" />
     <Compile Include="BuildScriptSupport\PSBuildScriptSupportInjector.cs">
       <SubType>Code</SubType>
     </Compile>

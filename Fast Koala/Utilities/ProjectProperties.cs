@@ -114,5 +114,19 @@ namespace Wijits.FastKoala.Utilities
                 SetPropertyValue("PowerShellBuildEnabled", value);
             }
         }
+
+        public bool NodeJSBuildEnabled
+        {
+            get
+            {
+                var ret = GetPropertyValue("NodeJSBuildEnabled");
+                if (string.IsNullOrEmpty(ret)) ret = "false";
+                return bool.Parse(ret);
+            }
+            set
+            {
+                SetPropertyValue("NodeJSBuildEnabled", value);
+            }
+        }
     }
 }
