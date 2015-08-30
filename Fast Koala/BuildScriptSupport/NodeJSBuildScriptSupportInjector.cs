@@ -51,7 +51,7 @@ namespace Wijits.FastKoala.BuildScriptInjections
             {
                 _logger.LogInfo("Prompting for file name");
                 var dialog = new AddBuildScriptNamePrompt(containerDirectory, ".js");
-                dialog.InvokeAfter = false;
+                // dialog.InvokeAfter = false;
                 var dialogResult = dialog.ShowDialog(VsEnvironment.OwnerWindow);
                 if (dialogResult == DialogResult.Cancel) return false;
                 scriptFile = dialog.FileName;
