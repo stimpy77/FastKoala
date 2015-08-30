@@ -50,12 +50,6 @@ For web apps, which use inline transformations in a nested folder, the default f
 Web sites are not supported and will never be supported.
 
 ASP.NET 5 is not supported; it might not ever be supported.
-    
-### Adding Build Scripts
-
-Fast Koala also supports adding build scripts, such as PowerShell scripts, NodeJS scripts, and project extensions (.targets files). To use this feature, right-click on the project node or a project folder in Solution Explorer and choose Add -> Build Script -> PowerShell Script (.ps1) or whichever script type you need. Scripts added with Fast Koala have the added advantage of having the MSBuild project properties exposed to the script runtime engine.
-
-Additional script types are planned in the future.
 
 ### How build-time transformations work
 
@@ -81,6 +75,12 @@ The `InlineAppCfgTransforms` and `AppConfigBaseFileFullPath` MSBuild properties 
     $(MSBuildProjectDirectory)\$(ConfigDir)\$(AppCfgType).Base.config
 
 You will need to either evaluate the MSBuild project property or load the project's XML and parse these properties out yourself.
+    
+### Adding Build Scripts
+
+Fast Koala also supports adding build scripts, such as PowerShell scripts, NodeJS scripts, and project extensions (.targets files). To use this feature, right-click on the project node or a project folder in Solution Explorer and choose Add -> Build Script -> PowerShell Script (.ps1) or whichever script type you need. Scripts added with Fast Koala have the added advantage of having the MSBuild project properties exposed to the script runtime engine.
+
+Additional script types are planned in the future.
 
 ### Development notes
 
