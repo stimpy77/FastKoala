@@ -3,6 +3,8 @@ Enables build-time config transforms for various project types including ASP.NET
 
 There are future plans to also ease config name management.
 
+You **do not** need Fast Koala to be installed once its changes have been applied to a project. A TFS build server would need no knowledge of Fast Koala for any of Fast Koala's changes to be effective.
+
 ### Video Demos
 
 * Part 1 (v1.1.13): https://www.youtube.com/watch?v=WTMqW06vaSs
