@@ -41,8 +41,16 @@ namespace Wijits.FastKoala.BuildScriptInjections
         {
             if (!Project.Saved)
             {
-                MessageBox.Show(_ownerWindow, "Please save the project before adding project includes.", "Save first",
-                    MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+                var saveDialogResult = MessageBox.Show(_ownerWindow, "Save pending changes to solution?",
+                    "Save pending changes", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (saveDialogResult == DialogResult.OK || saveDialogResult == DialogResult.Yes)
+                    _dte.SaveAll();
+            }
+            if (!Project.Saved || string.IsNullOrEmpty(Project.FullName))
+            {
+                var saveDialogResult = MessageBox.Show(_ownerWindow, "Pending changes need to be saved. Please save the project before adding project imports, then retry.", "Save first",
+                    MessageBoxButtons.OKCancel, MessageBoxIcon.Asterisk);
+                if (saveDialogResult != DialogResult.Cancel) _dte.SaveAll();
                 return false;
             }
             _logger.LogInfo("Begin adding project import file");
@@ -80,7 +88,7 @@ You must not move, rename, or remove this file once it has been added to the pro
     <Target Name=""" + scriptFileShortName + @"""><!-- consider adding attrib BeforeTargets=""Build"" or AfterTargets=""Build"" -->
 
         <!-- my tasks here -->
-        <Message Importance=""high"" Text=""" + scriptFileShortName + @""" />
+        <Message Importance=""high"" Text=""" + scriptFileShortName + @".targets output: ProjectGuid = $(ProjectGuid)"" />
 
     </Target>
 </Project>");

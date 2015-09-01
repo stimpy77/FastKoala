@@ -90,10 +90,19 @@ Write-Output ""`$MSBuildProjectDirectory = `""$MSBuildProjectDirectory`""""");
             if (!Project.Saved || !Project.DTE.Solution.Saved || 
                 string.IsNullOrEmpty(Project.FullName) || string.IsNullOrEmpty(Project.DTE.Solution.FullName))
             {
+                var saveDialogResult = MessageBox.Show(_ownerWindow, "Save pending changes to solution?",
+                    "Save pending changes", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (saveDialogResult == DialogResult.OK || saveDialogResult == DialogResult.Yes)
+                    _dte.SaveAll();
+            }
+            if (!Project.Saved || !Project.DTE.Solution.Saved ||
+                string.IsNullOrEmpty(Project.FullName) || string.IsNullOrEmpty(Project.DTE.Solution.FullName))
+            {
+                var saveDialogResult = MessageBox.Show(_ownerWindow,
+                    "Pending changes need to be saved. Please save the project and solution before adding PowerShell build scripts, then retry.",
+                    "Aborted", MessageBoxButtons.OKCancel, MessageBoxIcon.Asterisk);
+                if (saveDialogResult != DialogResult.Cancel) _dte.SaveAll();
                 _logger.LogInfo("Project or solution is not saved. Aborting.");
-                MessageBox.Show(_ownerWindow,
-                    "Please save the project and solution before adding PowerShell build scripts.",
-                    "Aborted", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
                 return null;
             }
 
@@ -162,8 +171,8 @@ Write-Output ""`$MSBuildProjectDirectory = `""$MSBuildProjectDirectory`""""");
             var vars = new System.Text.StringBuilder();
             foreach (ProjectProperty evaluatedProperty in project.AllEvaluatedProperties)
             {
-                if (!evaluatedProperty.IsEnvironmentProperty)
-                {
+                //if (!evaluatedProperty.IsEnvironmentProperty)
+                //{
                     var name = evaluatedProperty.Name;
                     var value = evaluatedProperty.EvaluatedValue;
                     if (!string.IsNullOrWhiteSpace(name))
@@ -177,7 +186,7 @@ Write-Output ""`$MSBuildProjectDirectory = `""$MSBuildProjectDirectory`""""");
                             }
                         }
                     }
-                }
+                //}
             }
             using (RunspaceInvoke scriptInvoker = new RunspaceInvoke(runspace)) 
             { 
@@ -187,12 +196,12 @@ Write-Output ""`$MSBuildProjectDirectory = `""$MSBuildProjectDirectory`""""");
                     pipeline.Commands.AddScript(""& \"""" + ScriptFile + ""\""""); 
                     try {
                         var results = pipeline.Invoke();
-                        string soutput = """";
+                        var sbout = new StringBuilder();
                         foreach (var result in results)
                         {
-                            soutput += result.ToString();
+                            sbout.AppendLine(result.ToString());
                         }
-                        BuildEngine.LogMessageEvent(new BuildMessageEventArgs(soutput, """", """", MessageImportance.High));
+                        BuildEngine.LogMessageEvent(new BuildMessageEventArgs(sbout.ToString(), """", """", MessageImportance.High));
                     } catch (Exception e) {
                         BuildEngine.LogErrorEvent(new BuildErrorEventArgs("""", """", ScriptFile, 0, 0, 0, 0, e.ToString(), """", """", DateTime.Now));
                         throw;

@@ -187,12 +187,15 @@ namespace Wijits.FastKoala
         }
 
         private object appConfigFileChangedMessageLock = new object();
+        private Cursor previousCursor;
+        private bool _building;
         private void OnAppConfigFileChanged(object sender, AppConfigFileChangedEventArgs appConfigFileChangedEventArgs)
         {
 //#if !DEBUG
             try
             {
 //#endif
+                if (_building || ((ConfigWatcher)sender).IsBuilding) return;
                 var project = appConfigFileChangedEventArgs.Project;
                 string projectFullName;
                 try { projectFullName = project.FullName; } catch { return; }
@@ -208,11 +211,37 @@ namespace Wijits.FastKoala
                 if (File.Exists(tmpBaseFileFullPath)) baseFileFullPath = tmpBaseFileFullPath;
                 lock (appConfigFileChangedMessageLock)
                 {
+                    var tmpGenFilePath = fileInfo.FullName + ".tmp";
+                    var modifiedGeneratedConfigFileContents = File.ReadAllText(fileInfo.FullName);
                     if (!string.IsNullOrEmpty(baseFileFullPath) &&
                         baseFileFullPath != appConfigFileChangedEventArgs.AppConfigFile
                         && DateTime.Now - _lastModifiedNotification > TimeSpan.FromSeconds(15)
-                        && Regex.Replace(File.ReadAllText(fileInfo.FullName), @"\s", "") != Regex.Replace(File.ReadAllText(baseFileFullPath), @"\s", ""))
+                        && Regex.Replace(modifiedGeneratedConfigFileContents, @"\s", "") != Regex.Replace(File.ReadAllText(baseFileFullPath), @"\s", ""))
                     {
+                        // 1. re-run TransformXml
+                        var xfrmFile = Path.Combine(project.GetDirectory(), projectProperties.ConfigDir,
+                            projectProperties.AppCfgType + "."
+                            + project.ConfigurationManager.ActiveConfiguration.ConfigurationName + ".config");
+                        if (!File.Exists(xfrmFile))
+                        {
+                            File.Copy(baseFileFullPath, tmpGenFilePath, true);
+                        }
+                        else
+                        {
+                            var xfrm = new MSBuildXmlTransformer
+                            {
+                                Source = baseFileFullPath,
+                                Transform = xfrmFile,
+                                Destination = tmpGenFilePath
+                            };
+                            xfrm.Execute();
+                        }
+                        // 2. load transformxml output as string
+                        var generatedConfigFileContents = File.ReadAllText(tmpGenFilePath);
+                        // 3. delete tmp
+                        File.Delete(tmpGenFilePath);
+                        // 4. compare
+                        if (generatedConfigFileContents == modifiedGeneratedConfigFileContents) return;
                         var baseFileRelativePath = FileUtilities.GetRelativePath(
                             Directory.GetParent(project.GetDirectory()).FullName, baseFileFullPath, trimDotSlash: true);
                         MessageBox.Show(GetNativeWindow(),
@@ -222,6 +251,7 @@ namespace Wijits.FastKoala
                             MessageBoxIcon.Exclamation);
                         _lastModifiedNotification = DateTime.Now;
                         Dte.ExecuteCommand("Tools.DiffFiles", "\"" + fileInfo.FullName + "\" \"" + baseFileFullPath + "\"");
+                        _building = false;
                     }
                 }
 //#if !DEBUG
@@ -246,12 +276,16 @@ namespace Wijits.FastKoala
 
         private void BuildEventsOnOnBuildBegin(vsBuildScope scope, vsBuildAction action)
         {
-            _configWatchers.ToList().ForEach(kvp=>kvp.Value.IsBuilding = true);
+            BeginPackageBusy(false);
         }
 
         private void BuildEventsOnOnBuildDone(vsBuildScope scope, vsBuildAction action)
         {
-            _configWatchers.ToList().ForEach(kvp => kvp.Value.IsBuilding = false);
+            System.Threading.Tasks.Task.Run(() =>
+            {
+                System.Threading.Thread.Sleep(1000);
+                EndPackageBusy(false);
+            });
         }
 
         private async void OnDocumentOpened(Document document)
@@ -385,10 +419,13 @@ namespace Wijits.FastKoala
                 }
                 else containerDirectory = projectFolder;
 
+                BeginPackageBusy();
+
                 var psBuildScriptSupportInjector = await GetNewPowerShellBuildScriptSupportInjector();
                 if (await psBuildScriptSupportInjector.AddPowerShellScript(containerDirectory))
                     LogSuccess();
                 else LogCancelOrAbort();
+                EndPackageBusy();
             }
             catch (Exception exception)
             {
@@ -399,6 +436,33 @@ namespace Wijits.FastKoala
                 LogAndPromptUnhandledError(exception);
             }
             
+        }
+
+        private void BeginPackageBusy(bool withCursor = true)
+        {
+            if (withCursor)
+            {
+                if (previousCursor == null) previousCursor = Cursor.Current;
+                Cursor.Current = Cursors.WaitCursor;
+            }
+            foreach (var watcher in _configWatchers)
+            {
+                watcher.Value.IsBuilding = true;
+            }
+        }
+
+        private void EndPackageBusy(bool withCursor = true)
+        {
+            _building = false;
+            foreach (var watcher in _configWatchers)
+            {
+                watcher.Value.IsBuilding = _building;
+            }
+            if (withCursor)
+            {
+                Cursor.Current = previousCursor;
+                previousCursor = null;
+            }
         }
         #endregion
 
@@ -435,10 +499,13 @@ namespace Wijits.FastKoala
                 }
                 else containerDirectory = projectFolder;
 
+                BeginPackageBusy();
+
                 var targBuildScriptSupportInjector = await GetNewTargetsBuildScriptSupportInjector();
                 if (await targBuildScriptSupportInjector.AddProjectInclude(containerDirectory))
                     LogSuccess();
                 else LogCancelOrAbort();
+                EndPackageBusy();
             }
             catch (Exception exception)
             {
@@ -500,10 +567,14 @@ namespace Wijits.FastKoala
                 }
                 else containerDirectory = projectFolder;
 
+                BeginPackageBusy();
+
                 var nodeJSBuildScriptSupportInjector = await GetNewNodeJSBuildScriptSupportInjector();
                 if (await nodeJSBuildScriptSupportInjector.AddNodeJSScript(containerDirectory))
                     LogSuccess();
                 else LogCancelOrAbort();
+
+                EndPackageBusy();
             }
             catch (Exception exception)
             {
@@ -620,8 +691,8 @@ namespace Wijits.FastKoala
             if (project == null) return;
             var transformationsEnabler = await GetTransformationsEnabler(project);
             if (transformationsEnabler == null) return;
-            Cursor previousCursor = Cursor.Current;
-            Cursor.Current = Cursors.WaitCursor;
+
+            BeginPackageBusy();
 
             try
             {
@@ -638,7 +709,8 @@ namespace Wijits.FastKoala
 #endif
                 LogAndPromptUnhandledError(exception);
             }
-            Cursor.Current = previousCursor;
+
+            EndPackageBusy();
 
         }
 
@@ -702,7 +774,9 @@ namespace Wijits.FastKoala
                 if (project == null) return;
                 var transformationsEnabler = await GetTransformationsEnabler(project);
                 if (transformationsEnabler == null) return;
+                BeginPackageBusy();
                 await transformationsEnabler.AddMissingTransforms();
+                EndPackageBusy();
             }
             catch (Exception exception)
             {

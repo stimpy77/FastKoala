@@ -93,13 +93,22 @@ namespace Wijits.FastKoala.BuildScriptInjections
         private async Task<EnvDTE.Project> InjectNodeJSScriptSupport()
         {
             _logger.LogInfo("Injecting NodeJS rich execution support to project");
+            if (!Project.Saved || !Project.DTE.Solution.Saved ||
+                string.IsNullOrEmpty(Project.FullName) || string.IsNullOrEmpty(Project.DTE.Solution.FullName))
+            {
+                var saveDialogResult = MessageBox.Show(_ownerWindow, "Save pending changes to solution?",
+                    "Save pending changes", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (saveDialogResult == DialogResult.OK || saveDialogResult == DialogResult.Yes)
+                    _dte.SaveAll();
+            }
             if (!Project.Saved || !Project.DTE.Solution.Saved || 
                 string.IsNullOrEmpty(Project.FullName) || string.IsNullOrEmpty(Project.DTE.Solution.FullName))
             {
+                var saveDialogResult = MessageBox.Show(_ownerWindow,
+                    "Pending changes need to be saved. Please save the project and solution before adding NodeJS build scripts, then retry.",
+                    "Aborted", MessageBoxButtons.OKCancel, MessageBoxIcon.Asterisk);
+                if (saveDialogResult != DialogResult.Cancel) _dte.SaveAll();
                 _logger.LogInfo("Project or solution is not saved. Aborting.");
-                MessageBox.Show(_ownerWindow,
-                    "Please save the project and solution before adding NodeJS build scripts.",
-                    "Aborted", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
                 return null;
             }
 
@@ -205,7 +214,7 @@ namespace Wijits.FastKoala.BuildScriptInjections
 		{
 			if (!string.IsNullOrWhiteSpace(args.Data) && args.Data != ""> "" && args.Data != ""undefined"" && loadingScript)
 			{
-				var data = args.Data;
+				var data = args.Data.Replace(""\r"","""").Replace(""\n"", ""\r\n"");
 				while (data.StartsWith(""> "") || data.StartsWith(""... "")) {
                     if (data.StartsWith(""> "")) data = data.Substring(2);
                     if (data.StartsWith(""... "")) data = data.Substring(4);

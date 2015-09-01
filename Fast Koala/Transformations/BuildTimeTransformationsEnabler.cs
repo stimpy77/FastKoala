@@ -39,9 +39,17 @@ namespace Wijits.FastKoala.Transformations
             if (!Project.Saved || !Project.DTE.Solution.Saved ||
                 string.IsNullOrEmpty(Project.FullName) || string.IsNullOrEmpty(Project.DTE.Solution.FullName))
             {
-                MessageBox.Show(_ownerWindow,
-                    "Please save the project and solution before enabling build-time transformations.",
+                var saveDialogResult = MessageBox.Show(_ownerWindow, "Save pending changes to solution?",
+                    "Save pending changes", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (saveDialogResult == DialogResult.OK || saveDialogResult == DialogResult.Yes)
+                    _dte.SaveAll();
+            }
+            if (!Project.Saved || string.IsNullOrEmpty(Project.FullName))
+            {
+                var saveDialogResult = MessageBox.Show(_ownerWindow,
+                    "Pending changes need to be saved. Please save the project and solution before enabling build-time transformations, then retry.",
                     "Aborted", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+                if (saveDialogResult != DialogResult.Cancel) _dte.SaveAll();
                 return false;
             }
 
@@ -534,6 +542,7 @@ namespace Wijits.FastKoala.Transformations
                                         ProjectTypes.WindowsVB,
                                         ProjectTypes.WindowsPresentationFoundation
                                     }.Contains(pt)))) &&
+                        ProjectLooksLikeClickOnce &&
                         ProjectProperties.InlineAppCfgTransforms != true;
             }
         }

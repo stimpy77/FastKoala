@@ -44,7 +44,7 @@ namespace Wijits.FastKoala.Transformations
             if (DateTime.Now - _initialSetupTime < TimeSpan.FromSeconds(5)) return;
             if (AppConfigFileChanged != null)
             {
-                AppConfigFileChanged(_project, new AppConfigFileChangedEventArgs(_project, fileSystemEventArgs.FullPath));
+                AppConfigFileChanged(this, new AppConfigFileChangedEventArgs(_project, fileSystemEventArgs.FullPath));
             }
         }
 
