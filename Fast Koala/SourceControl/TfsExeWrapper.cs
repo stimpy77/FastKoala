@@ -30,22 +30,25 @@ namespace Wijits.FastKoala.SourceControl
 
         public async Task<bool> ItemIsUnderSourceControl(string filename)
         {
-            var vp = VsEnvironment.GetService<IVersionControlProvider>();
-            if (vp != null)
+            try
             {
-                try
+                var vp = VsEnvironment.GetService<IVersionControlProvider>();
+                if (vp != null)
                 {
                     bool isBound;
                     vp.IsFileBoundToSCC(filename, out isBound);
                     return isBound;
                 }
-                catch
-                {
-                }
+                var statusOutput = TaskResult = await TfExec("info \"" + filename + "\"");
+                if (statusOutput.StartsWith("No items match")) return false;
+                return true;
             }
-            var statusOutput = TaskResult = await TfExec("info \"" + filename + "\"");
-            if (statusOutput.StartsWith("No items match")) return false;
-            return true;
+            catch (FileNotFoundException e /* ?? .. trying to find a reported error #35 */)
+            {
+                _logger.LogWarn(e.ToString());
+                return false;
+            }
+
         }
 
         /// <summary>

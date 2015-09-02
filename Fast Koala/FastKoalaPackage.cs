@@ -615,7 +615,15 @@ namespace Wijits.FastKoala
                 // Get the file path
                 string itemFullPath = null;
                 ((IVsProject) hierarchy).GetMkDocument(itemid, out itemFullPath);
-                var transformFileInfo = new FileInfo(itemFullPath);
+                FileInfo transformFileInfo = null;
+                try
+                {
+                    transformFileInfo = new FileInfo(itemFullPath);
+                }
+                catch
+                {
+                    return;
+                }
 
                 // then check if the file is named 'web.config'
                 var isConfig = Regex.IsMatch(transformFileInfo.Name, @"[Web|App](\.\w+)?\.config",
@@ -721,39 +729,47 @@ namespace Wijits.FastKoala
         private async void AddMissingTransformationsMenuItem_BeforeQueryStatus(object sender, EventArgs e)
         {
             try { 
-            // get the menu that fired the event
-            var menuCommand = sender as OleMenuCommand;
-            if (menuCommand == null) return;
+                // get the menu that fired the event
+                var menuCommand = sender as OleMenuCommand;
+                if (menuCommand == null) return;
 
-            // start by assuming that the menu will not be shown
-            menuCommand.Visible = false;
-            menuCommand.Enabled = false;
+                // start by assuming that the menu will not be shown
+                menuCommand.Visible = false;
+                menuCommand.Enabled = false;
 
-            IVsHierarchy hierarchy = null;
-            var itemid = VSConstants.VSITEMID_NIL;
+                IVsHierarchy hierarchy = null;
+                var itemid = VSConstants.VSITEMID_NIL;
 
-            if (!IsSingleProjectItemSelection(out hierarchy, out itemid)) return;
-            // Get the file path
-            string itemFullPath = null;
-            ((IVsProject)hierarchy).GetMkDocument(itemid, out itemFullPath);
-            var transformFileInfo = new FileInfo(itemFullPath);
+                if (!IsSingleProjectItemSelection(out hierarchy, out itemid)) return;
+                // Get the file path
+                string itemFullPath = null;
+                ((IVsProject)hierarchy).GetMkDocument(itemid, out itemFullPath);
+                FileInfo transformFileInfo = null;
+                try
+                {
+                    transformFileInfo = new FileInfo(itemFullPath);
+                }
+                catch
+                {
+                    return;
+                }
 
-            // then check if the file is named 'web.config'
-            var isConfig = Regex.IsMatch(transformFileInfo.Name, @"[Web|App](\.\w+)?\.config",
-                RegexOptions.IgnoreCase);
+                // then check if the file is named 'web.config'
+                var isConfig = Regex.IsMatch(transformFileInfo.Name, @"[Web|App](\.\w+)?\.config",
+                    RegexOptions.IgnoreCase);
 
-            // if not leave the menu hidden
-            if (!isConfig) return;
+                // if not leave the menu hidden
+                if (!isConfig) return;
 
-            var project = GetSelectedProject();
-            if (project == null) return;
-            var transformationsEnabler = await GetTransformationsEnabler(project);
-            if (transformationsEnabler == null) return;
-            if (transformationsEnabler.HasMissingTransforms)
-            {
-                menuCommand.Visible = true;
-                menuCommand.Enabled = true;
-            }
+                var project = GetSelectedProject();
+                if (project == null) return;
+                var transformationsEnabler = await GetTransformationsEnabler(project);
+                if (transformationsEnabler == null) return;
+                if (transformationsEnabler.HasMissingTransforms)
+                {
+                    menuCommand.Visible = true;
+                    menuCommand.Enabled = true;
+                }
 
             }
             catch (Exception exception)

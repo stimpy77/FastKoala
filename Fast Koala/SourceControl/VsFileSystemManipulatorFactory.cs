@@ -56,6 +56,7 @@ namespace Wijits.FastKoala.SourceControl
 
             var tfs = new TfsExeWrapper(project.GetDirectory(), VsEnvironment.Dte.GetLogger());
             var projectFilePath = project.FullName;
+            if (string.IsNullOrWhiteSpace(projectFilePath)) return null;
             try
             {
                 if (File.Exists(projectFilePath) && await tfs.ItemIsUnderSourceControl(projectFilePath))
@@ -75,7 +76,7 @@ namespace Wijits.FastKoala.SourceControl
                 sb.AppendLine("Length: " + fileInfo.Length);
                 sb.AppendLine("Name: " + fileInfo.Name);
                 sb.AppendLine("Attributes: " + fileInfo.Attributes.ToString());
-                logger.LogError("File details:\r\n" + sb.ToString());
+                logger.LogError("File details ...\r\n" + sb.ToString());
                 throw; //return "tfs"; // whatever
             }
             var sccdir = project.DTE.Solution.GetDirectory();

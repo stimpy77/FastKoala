@@ -521,6 +521,7 @@ namespace Wijits.FastKoala.Transformations
         {
             get
             {
+                if (Project == null) return false;
                 // ASP.NET 5 projects (not supported) seem to be using the .xproj file extension
                 if (Project.FullName.ToLower().EndsWith(".xproj")) return false;
 

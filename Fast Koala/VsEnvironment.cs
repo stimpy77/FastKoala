@@ -31,7 +31,14 @@ namespace Wijits.FastKoala
 
         public static T GetService<T>()
         {
-            return (T) ServiceProvider.GetService(typeof (T));
+            try
+            {
+                return (T) ServiceProvider.GetService(typeof (T));
+            }
+            catch
+            {
+                return default(T);
+            }
         }
 
         public static object GetService(this DTE dte, Type type)
