@@ -74,7 +74,7 @@ namespace Wijits.FastKoala.BuildScriptInjections
     //   (run appropriate npm install commands from this directory first)
     //
     // var gulp = require('gulp'),
-    //    gutil = require('gulp-util');
+    //     gutil = require('gulp-util');
     // gulp.task('default', function () {
     //     return gutil.log('Gulp is running!')
     // });
@@ -195,20 +195,14 @@ namespace Wijits.FastKoala.BuildScriptInjections
         vars.AppendLine(""var msbuild = { properties: {} };"");
         foreach (ProjectProperty evaluatedProperty in project.AllEvaluatedProperties)
         {
-            if (!evaluatedProperty.IsEnvironmentProperty)
+            var name = evaluatedProperty.Name;
+            var value = evaluatedProperty.EvaluatedValue;
+            if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(value))
             {
-                var name = evaluatedProperty.Name;
-                var value = evaluatedProperty.EvaluatedValue;
-                if (!string.IsNullOrWhiteSpace(name))
-                {
-                    if (!string.IsNullOrWhiteSpace(value))
-                    {
-                        if (value.ToLower() == ""true"" || value.ToLower() == ""false"") {
-                            vars.AppendLine(""msbuild.properties[\"""" + name + ""\""] = "" + value + "";"");
-                        } else {
-                            vars.AppendLine(""msbuild.properties[\"""" + name + ""\""] = \"""" + value.Replace(""\\"", ""\\\\"").Replace(""\"""", ""\\\"""").Replace(""\r"", """").Replace(""\n"", ""\\n"") + ""\"";"");
-                        }
-                    }
+                if (value.ToLower() == ""true"" || value.ToLower() == ""false"") {
+                    vars.AppendLine(""msbuild.properties[\"""" + name + ""\""] = "" + value + "";"");
+                } else {
+                    vars.AppendLine(""msbuild.properties[\"""" + name + ""\""] = \"""" + value.Replace(""\\"", ""\\\\"").Replace(""\"""", ""\\\"""").Replace(""\r"", """").Replace(""\n"", ""\\n"") + ""\"";"");
                 }
             }
         }

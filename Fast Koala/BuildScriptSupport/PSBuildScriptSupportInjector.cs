@@ -177,22 +177,16 @@ Write-Output ""`$MSBuildProjectDirectory = `""$MSBuildProjectDirectory`""""");
             var vars = new System.Text.StringBuilder();
             foreach (ProjectProperty evaluatedProperty in project.AllEvaluatedProperties)
             {
-                //if (!evaluatedProperty.IsEnvironmentProperty)
-                //{
-                    var name = evaluatedProperty.Name;
-                    var value = evaluatedProperty.EvaluatedValue;
-                    if (!string.IsNullOrWhiteSpace(name))
-                    {
-                        if (!string.IsNullOrWhiteSpace(value))
-                        {
-                            if (value.ToLower() == ""true"" || value.ToLower() == ""false"") {
-                                vars.AppendLine(""$"" + name + "" = $"" + value);
-                            } else {
-                                vars.AppendLine(""$"" + name + "" = @\""\r\n"" + value.Replace(""\"""", ""\""\"""") + ""\r\n\""@"");
-                            }
-                        }
+                var name = evaluatedProperty.Name;
+                var value = evaluatedProperty.EvaluatedValue;
+                if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(value))
+                {
+                    if (value.ToLower() == ""true"" || value.ToLower() == ""false"") {
+                        vars.AppendLine(""$"" + name + "" = $"" + value);
+                    } else {
+                        vars.AppendLine(""$"" + name + "" = @\""\r\n"" + value.Replace(""\"""", ""\""\"""") + ""\r\n\""@"");
                     }
-                //}
+                }
             }
             using (RunspaceInvoke scriptInvoker = new RunspaceInvoke(runspace)) 
             { 
