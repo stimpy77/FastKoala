@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="5a540277-c820-4fb4-9cb5-f878fc9af04e" Version="1.1.23" Language="en-US" Publisher="jon@jondavis.net" />
+    <Identity Id="5a540277-c820-4fb4-9cb5-f878fc9af04e" Version="1.1.24" Language="en-US" Publisher="jon@jondavis.net" />
     <DisplayName>Fast Koala - [Web/App].config XML transforms</DisplayName>
     <Description xml:space="preserve">Enables config file transformations at build-time for common project types including ASP.NET 4.6-or-below web applications. </Description>
     <MoreInfo>https://github.com/stimpy77/FastKoala</MoreInfo>

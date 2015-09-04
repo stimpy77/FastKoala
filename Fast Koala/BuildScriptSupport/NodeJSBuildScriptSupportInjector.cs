@@ -67,8 +67,19 @@ namespace Wijits.FastKoala.BuildScriptInjections
 
             File.WriteAllText(scriptFile, @"(function() {
 
-  // MSBuild project properties are exposed at build-time. Example:
-  console.log(""msbuild.properties['ProjectGuid'] = \"""" + msbuild.properties['ProjectGuid'] + ""\"""");
+    // MSBuild project properties are exposed at build-time. Example:
+    console.log(""msbuild.properties['ProjectGuid'] = \"""" + msbuild.properties['ProjectGuid'] + ""\"""");
+
+    // Example: gulp
+    //   (run appropriate npm install commands from this directory first)
+    //
+    // var gulp = require('gulp'),
+    //    gutil = require('gulp-util');
+    // gulp.task('default', function () {
+    //     return gutil.log('Gulp is running!')
+    // });
+    // gulp.start('default');
+
 
 })();");
             var addedItem = Project.ProjectItems.AddFromFile(scriptFile);
@@ -115,8 +126,13 @@ namespace Wijits.FastKoala.BuildScriptInjections
             var projRoot = Project.GetProjectRoot();
             if (projRoot.UsingTasks.Any(ut => ut.TaskName == "InvokeNodeJS"))
                 return Project;
+            var inlineTaskVersionDep_group = projRoot.AddPropertyGroup();
+            var inlineTaskVersionDep_v12 = inlineTaskVersionDep_group.AddProperty("InlineTaskVersionDep", "v$(MSBuildToolsVersion)");
+            inlineTaskVersionDep_v12.Condition = "'$(MSBuildToolsVersion)' == '12'";
+            var inlineTaskVersionDep_v14 = inlineTaskVersionDep_group.AddProperty("InlineTaskVersionDep", "Core");
+            inlineTaskVersionDep_v14.Condition = "'$(MSBuildToolsVersion)' == '14'";
             var usingTask = projRoot.AddUsingTask("InvokeNodeJS",
-                @"$(MSBuildToolsPath)\Microsoft.Build.Tasks.v$(MSBuildToolsVersion).dll", null);
+                @"$(MSBuildToolsPath)\Microsoft.Build.Tasks.$(InlineTaskVersionDep).dll", null);
             usingTask.TaskFactory = "CodeTaskFactory";
             var utParameters = usingTask.AddParameterGroup();
 
@@ -174,6 +190,7 @@ namespace Wijits.FastKoala.BuildScriptInjections
             ?? new Project(BuildEngine.ProjectFileOfTaskNode);
         if (!ScriptFile.Contains("":"") && !ScriptFile.StartsWith(""\\\\""))
         ScriptFile = project.DirectoryPath + ""\\"" + ScriptFile;
+		var pwd = Directory.GetParent(ScriptFile).FullName;
         var vars = new System.Text.StringBuilder();
         vars.AppendLine(""var msbuild = { properties: {} };"");
         foreach (ProjectProperty evaluatedProperty in project.AllEvaluatedProperties)
@@ -205,7 +222,8 @@ namespace Wijits.FastKoala.BuildScriptInjections
 				RedirectStandardInput = true,
 				RedirectStandardOutput = true,
 				RedirectStandardError = true,
-				Arguments = ""-i""
+				Arguments = ""-i"",
+                WorkingDirectory = pwd
 			}
 		};
 

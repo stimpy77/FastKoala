@@ -109,8 +109,13 @@ Write-Output ""`$MSBuildProjectDirectory = `""$MSBuildProjectDirectory`""""");
             var projRoot = Project.GetProjectRoot();
             if (projRoot.UsingTasks.Any(ut => ut.TaskName == "InvokePowerShell"))
                 return Project;
+            var inlineTaskVersionDep_group = projRoot.AddPropertyGroup();
+            var inlineTaskVersionDep_v12 = inlineTaskVersionDep_group.AddProperty("InlineTaskVersionDep", "v$(MSBuildToolsVersion)");
+            inlineTaskVersionDep_v12.Condition = "'$(MSBuildToolsVersion)' == '12'";
+            var inlineTaskVersionDep_v14 = inlineTaskVersionDep_group.AddProperty("InlineTaskVersionDep", "Core");
+            inlineTaskVersionDep_v14.Condition = "'$(MSBuildToolsVersion)' == '14'";
             var usingTask = projRoot.AddUsingTask("InvokePowerShell",
-                @"$(MSBuildToolsPath)\Microsoft.Build.Tasks.v$(MSBuildToolsVersion).dll", null);
+                @"$(MSBuildToolsPath)\Microsoft.Build.Tasks.$(InlineTaskVersionDep).dll", null);
             usingTask.TaskFactory = "CodeTaskFactory";
             var utParameters = usingTask.AddParameterGroup();
 
@@ -164,6 +169,7 @@ Write-Output ""`$MSBuildProjectDirectory = `""$MSBuildProjectDirectory`""""");
             ?? new Project(BuildEngine.ProjectFileOfTaskNode);
         if (!ScriptFile.Contains("":"") && !ScriptFile.StartsWith(""\\\\""))
             ScriptFile = project.DirectoryPath + ""\\"" + ScriptFile;
+		var pwd = Directory.GetParent(ScriptFile).FullName;
         var runspaceConfig = RunspaceConfiguration.Create();
         using (Runspace runspace = RunspaceFactory.CreateRunspace(runspaceConfig)) 
         { 
@@ -192,6 +198,7 @@ Write-Output ""`$MSBuildProjectDirectory = `""$MSBuildProjectDirectory`""""");
             { 
                 using (Pipeline pipeline = runspace.CreatePipeline()) {
                     scriptInvoker.Invoke(vars.ToString()); 
+                    scriptInvoker.Invoke(""cd \"""" + pwd + ""\"""");
                     var fileName = ScriptFile.Substring(project.DirectoryPath.Length + 1);
                     pipeline.Commands.AddScript(""& \"""" + ScriptFile + ""\""""); 
                     try {
