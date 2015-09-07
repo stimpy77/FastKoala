@@ -7,7 +7,9 @@ You **do not** need Fast Koala to be installed once its changes have been applie
 
 ### Video Demo
 
-* v1.1.22 - http://youtu.be/fJaAGwVxSQA
+(Click to watch)
+
+[![Fast Koala v1.1.22](https://j.gifs.com/vW81x4.gif)](http://youtu.be/fJaAGwVxSQA)
 
 ### "Build-time" means F5
 
