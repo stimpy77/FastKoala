@@ -164,6 +164,7 @@ Write-Output ""`$MSBuildProjectDirectory = `""$MSBuildProjectDirectory`""""");
         <Using Namespace=""Microsoft.Build.Evaluation"" />
         <Code Type=""Fragment"" Language=""cs""><![CDATA[
         if (!ScriptFile.ToLower().EndsWith("".ps1"")) return true;
+        var envdir = Environment.CurrentDirectory;
 		BuildEngine.LogMessageEvent(new BuildMessageEventArgs(""Executing with PowerShell: "" + ScriptFile, """", """", MessageImportance.High));
         Project project = ProjectCollection.GlobalProjectCollection.GetLoadedProjects(BuildEngine.ProjectFileOfTaskNode).FirstOrDefault()
             ?? new Project(BuildEngine.ProjectFileOfTaskNode);
@@ -210,6 +211,7 @@ Write-Output ""`$MSBuildProjectDirectory = `""$MSBuildProjectDirectory`""""");
                 }
             } 
         }
+        Environment.CurrentDirectory = envdir;
         return true;
     ]]></Code>
         </Task>"

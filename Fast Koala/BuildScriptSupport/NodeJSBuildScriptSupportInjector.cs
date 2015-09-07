@@ -184,6 +184,7 @@ namespace Wijits.FastKoala.BuildScriptInjections
           <Code Type=""Fragment"" Language=""cs""><![CDATA[
 
         if (!ScriptFile.ToLower().EndsWith("".js"")) return true;
+        var envdir = Environment.CurrentDirectory;
         var runSuccess = true;
 		BuildEngine.LogMessageEvent(new BuildMessageEventArgs(""Executing as NodeJS REPL: "" + ScriptFile, """", """", MessageImportance.High));
         Project project = ProjectCollection.GlobalProjectCollection.GetLoadedProjects(BuildEngine.ProjectFileOfTaskNode).FirstOrDefault()
@@ -227,9 +228,9 @@ namespace Wijits.FastKoala.BuildScriptInjections
 			if (!string.IsNullOrWhiteSpace(args.Data) && args.Data != ""> "" && args.Data != ""undefined"" && loadingScript)
 			{
 				var data = args.Data.Replace(""\r"","""").Replace(""\n"", ""\r\n"");
-				while (data.StartsWith(""> "") || data.StartsWith(""... "")) {
+				while (data.StartsWith(""> "") || Regex.IsMatch(data, @""\.+ "")) {
                     if (data.StartsWith(""> "")) data = data.Substring(2);
-                    if (data.StartsWith(""... "")) data = data.Substring(4);
+                    if (Regex.IsMatch(data, @""\.+ "")) data = data.Substring(Regex.Match(data, @""\.+ "").ToString().Length);
                 }
                 if (data == ""undefined"") return;
 				if (Regex.IsMatch(data, ""\\w*Error: "")) {
@@ -261,6 +262,8 @@ namespace Wijits.FastKoala.BuildScriptInjections
 		process.StandardInput.WriteLine("".load "" + ScriptFile.Replace(""\\"", ""\\\\""));
 		process.StandardInput.WriteLine(""process.exit()"");
 		process.WaitForExit();
+
+        Environment.CurrentDirectory = envdir;
 		
         return runSuccess;
     ]]></Code>
