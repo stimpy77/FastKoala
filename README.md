@@ -5,6 +5,8 @@ There are future plans to also ease config name management.
 
 You **do not** need Fast Koala to be installed once its changes have been applied to a project. A TFS build server would need no knowledge of Fast Koala for any of Fast Koala's changes to be effective.
 
+[![Contact me on Codementor](https://cdn.codementor.io/badges/contact_me_github.svg)](https://www.codementor.io/solutionsjon?utm_source=github&utm_medium=button&utm_term=solutionsjon&utm_campaign=github)
+
 ### Video Demo
 
 (Click to watch)
