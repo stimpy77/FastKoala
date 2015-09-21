@@ -24,6 +24,7 @@ namespace Wijits.FastKoala.SourceControl
         {
             var vsPath = Process.GetCurrentProcess().Modules[0].FileName;
             _tfexe = Path.Combine(Directory.GetParent(vsPath).FullName, "tf.exe");
+            if (!File.Exists(_tfexe)) _tfexe = null;
             _workingDirectory = workingDirectory;
             _logger = logger;
         }
@@ -45,7 +46,10 @@ namespace Wijits.FastKoala.SourceControl
             }
             catch (FileNotFoundException e /* ?? .. trying to find a reported error #35 */)
             {
-                _logger.LogWarn(e.ToString());
+                if (_tfexe != null) // TFS wouldn't have worked anyway
+                {
+                    _logger.LogWarn(e.ToString());
+                }
                 return false;
             }
 
@@ -127,6 +131,7 @@ namespace Wijits.FastKoala.SourceControl
 
         private async Task<string> TfExec(string args)
         {
+            if (_tfexe == null) throw new InvalidOperationException("Tf.exe is not where it was expected to be.");
             var sb = new StringBuilder();
             var startinfo = new ProcessStartInfo(_tfexe, args)
             {

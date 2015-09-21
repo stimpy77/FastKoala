@@ -57,27 +57,30 @@ namespace Wijits.FastKoala.SourceControl
             var tfs = new TfsExeWrapper(project.GetDirectory(), VsEnvironment.Dte.GetLogger());
             var projectFilePath = project.FullName;
             if (string.IsNullOrWhiteSpace(projectFilePath)) return null;
-            try
+            if (!projectFilePath.Contains("://") && File.Exists(projectFilePath))
             {
-                if (File.Exists(projectFilePath) && await tfs.ItemIsUnderSourceControl(projectFilePath))
+                try
                 {
-                    return "tfs";
+                    if (await tfs.ItemIsUnderSourceControl(projectFilePath))
+                    {
+                        return null;
+                    }
                 }
-            }
-            catch
-            {
-                var logger = VsEnvironment.Dte.GetLogger();
-                logger.LogError("Something went wrong when checking to see if this file is under source control: " 
-                    + projectFilePath);
-                var fileInfo = new FileInfo(projectFilePath);
-                var sb = new StringBuilder();
-                sb.AppendLine("Exists: " + fileInfo.Exists);
-                sb.AppendLine("IsReadOnly: " + fileInfo.IsReadOnly);
-                sb.AppendLine("Length: " + fileInfo.Length);
-                sb.AppendLine("Name: " + fileInfo.Name);
-                sb.AppendLine("Attributes: " + fileInfo.Attributes.ToString());
-                logger.LogError("File details ...\r\n" + sb.ToString());
-                throw; //return "tfs"; // whatever
+                catch
+                {
+                    var logger = VsEnvironment.Dte.GetLogger();
+                    logger.LogError("Something went wrong when checking to see if this file is under source control: "
+                                    + projectFilePath);
+                    var fileInfo = new FileInfo(projectFilePath);
+                    var sb = new StringBuilder();
+                    sb.AppendLine("Exists: " + fileInfo.Exists);
+                    sb.AppendLine("IsReadOnly: " + fileInfo.IsReadOnly);
+                    sb.AppendLine("Length: " + fileInfo.Length);
+                    sb.AppendLine("Name: " + fileInfo.Name);
+                    sb.AppendLine("Attributes: " + fileInfo.Attributes.ToString());
+                    logger.LogError("File details ...\r\n" + sb.ToString());
+                    throw; //return "tfs"; // whatever
+                }
             }
             var sccdir = project.DTE.Solution.GetDirectory();
             if (string.IsNullOrEmpty(sccdir)) sccdir = project.GetDirectory();
