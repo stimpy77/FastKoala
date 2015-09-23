@@ -63,7 +63,7 @@ namespace Wijits.FastKoala.SourceControl
                 {
                     if (await tfs.ItemIsUnderSourceControl(projectFilePath))
                     {
-                        return null;
+                        return "tfs";
                     }
                 }
                 catch
