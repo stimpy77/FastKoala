@@ -68,9 +68,11 @@ namespace Wijits.FastKoala.SourceControl
                 }
                 catch
                 {
-                    var logger = VsEnvironment.Dte.GetLogger();
-                    logger.LogError("Something went wrong when checking to see if this file is under source control: "
-                                    + projectFilePath);
+                    //var logger = VsEnvironment.Dte.GetLogger();
+                    //logger.LogError(
+                    System.Diagnostics.Debug.WriteLine(
+                        "Something went wrong when checking to see if this file is under source control: "
+                                    + projectFilePath, "Error");
                     var fileInfo = new FileInfo(projectFilePath);
                     var sb = new StringBuilder();
                     sb.AppendLine("Exists: " + fileInfo.Exists);
@@ -78,8 +80,9 @@ namespace Wijits.FastKoala.SourceControl
                     sb.AppendLine("Length: " + fileInfo.Length);
                     sb.AppendLine("Name: " + fileInfo.Name);
                     sb.AppendLine("Attributes: " + fileInfo.Attributes.ToString());
-                    logger.LogError("File details ...\r\n" + sb.ToString());
-                    throw; //return "tfs"; // whatever
+                    //logger.LogError("File details ...\r\n" + sb.ToString());
+                    System.Diagnostics.Debug.WriteLine(sb.ToString());
+                    //throw; //return "tfs"; // whatever
                 }
             }
             var sccdir = project.DTE.Solution.GetDirectory();
