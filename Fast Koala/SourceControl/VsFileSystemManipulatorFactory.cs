@@ -35,16 +35,19 @@ namespace Wijits.FastKoala.SourceControl
                     result = new GitExeWrapper(project.GetDirectory(), dte.GetLogger());
                     break;
                 case "hg": // not yet implemented
-                    result = null;
+                    //result = null;
+                    result = new NonSccBasicFileSystem();
                     break;
                 case "svn": // not yet implemented
-                    result = null;
+                    //result = null;
+                    result = new NonSccBasicFileSystem();
                     break;
                 case null:
                     result = new NonSccBasicFileSystem();
                     break;
                 default: // not implemented
-                    result = null;
+                    //result = null;
+                    result = new NonSccBasicFileSystem();
                     break;
             }
             return result;
