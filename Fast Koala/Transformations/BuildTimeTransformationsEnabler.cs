@@ -463,9 +463,10 @@ namespace Wijits.FastKoala.Transformations
         {
             resourceName = typeof (FastKoalaPackage).Namespace + @".Resources." + resourceName.Replace("\\", ".");
             var assembly = typeof (BuildTimeTransformationsEnabler).Assembly;
-            using (var stream = assembly.GetManifestResourceStream(resourceName))
+            var stream = assembly.GetManifestResourceStream(resourceName);
+            if (stream == null) return null;
+            using (stream)
             {
-                Debug.Assert(stream != null, "stream != null");
                 using (var sr = new StreamReader(stream))
                 {
                     return sr.ReadToEnd();
