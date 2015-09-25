@@ -70,15 +70,14 @@ namespace Wijits.FastKoala.BuildScriptInjections
     // MSBuild project properties are exposed at build-time. Example:
     console.log(""msbuild.properties['ProjectGuid'] = \"""" + msbuild.properties['ProjectGuid'] + ""\"""");
 
-    // Example: gulp
-    //   (run appropriate npm install commands from this directory first)
-    //
-    // var gulp = require('gulp'),
-    //     gutil = require('gulp-util');
-    // gulp.task('default', function () {
-    //     return gutil.log('Gulp is running!')
-    // });
-    // gulp.start('default');
+    //// Example: self-install and run gulp
+    //if (!require('fs').existsSync('./node_modules/gulp')) {
+    //    console.log('gulp not installed, installing now');
+    //    require('child_process').execSync('npm install gulp');
+    //}
+    //var gulp = require('gulp');
+    //gulp.task('default', function () { return console.log('Gulp is running!'); });
+    //gulp.start('default');
 
 
 })();");
@@ -203,7 +202,12 @@ namespace Wijits.FastKoala.BuildScriptInjections
                 if (value.ToLower() == ""true"" || value.ToLower() == ""false"") {
                     vars.AppendLine(""msbuild.properties[\"""" + name + ""\""] = "" + value + "";"");
                 } else {
-                    vars.AppendLine(""msbuild.properties[\"""" + name + ""\""] = \"""" + value.Replace(""\\"", ""\\\\"").Replace(""\"""", ""\\\"""").Replace(""\r"", """").Replace(""\n"", ""\\n"") + ""\"";"");
+                    vars.AppendLine(""msbuild.properties[\"""" + name + ""\""] = \"""" 
+                        + value.Replace(""\\"", ""\\\\"")
+                               .Replace(""\"""", ""\\\"""")
+                               .Replace(""\r"", """")
+                               .Replace(""\n"", ""\\n"")
+                        + ""\"";"");
                 }
             }
         }
