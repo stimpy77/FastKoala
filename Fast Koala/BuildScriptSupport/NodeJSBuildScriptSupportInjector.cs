@@ -70,11 +70,12 @@ namespace Wijits.FastKoala.BuildScriptInjections
     // MSBuild project properties are exposed at build-time. Example:
     console.log(""msbuild.properties['ProjectGuid'] = \"""" + msbuild.properties['ProjectGuid'] + ""\"""");
 
-    //// Example: self-install and run gulp
+    //// Example: self-install (init node_modules directly into current script directory) and run gulp
     //if (!require('fs').existsSync('./node_modules/gulp')) {
     //    console.log('gulp not installed, installing now');
     //    require('child_process').execSync('npm install gulp');
     //}
+    //
     //var gulp = require('gulp');
     //gulp.task('default', function () { return console.log('Gulp is running!'); });
     //gulp.start('default');
@@ -85,7 +86,7 @@ namespace Wijits.FastKoala.BuildScriptInjections
             addedItem.Properties.Item("ItemType").Value
                 = invokeAfter.Value ? "InvokeAfter" : "InvokeBefore";
             _logger.LogInfo("NodeJS script added to project: " + scriptFileName);
-            Task.Run(() =>
+            await Task.Run(() =>
             {
                 System.Threading.Thread.Sleep(250);
                 _dte.ExecuteCommand("File.OpenFile", "\"" + scriptFile + "\"");
@@ -185,12 +186,12 @@ namespace Wijits.FastKoala.BuildScriptInjections
         if (!ScriptFile.ToLower().EndsWith("".js"")) return true;
         var envdir = Environment.CurrentDirectory;
         var runSuccess = true;
-		BuildEngine.LogMessageEvent(new BuildMessageEventArgs(""Executing as NodeJS REPL: "" + ScriptFile, """", """", MessageImportance.High));
+        BuildEngine.LogMessageEvent(new BuildMessageEventArgs(""Executing as NodeJS REPL: "" + ScriptFile, """", """", MessageImportance.High));
         Project project = ProjectCollection.GlobalProjectCollection.GetLoadedProjects(BuildEngine.ProjectFileOfTaskNode).FirstOrDefault()
             ?? new Project(BuildEngine.ProjectFileOfTaskNode);
         if (!ScriptFile.Contains("":"") && !ScriptFile.StartsWith(""\\\\""))
         ScriptFile = project.DirectoryPath + ""\\"" + ScriptFile;
-		var pwd = Directory.GetParent(ScriptFile).FullName;
+        var pwd = Directory.GetParent(ScriptFile).FullName;
         var vars = new System.Text.StringBuilder();
         vars.AppendLine(""var msbuild = { properties: {} };"");
         foreach (ProjectProperty evaluatedProperty in project.AllEvaluatedProperties)
@@ -211,64 +212,64 @@ namespace Wijits.FastKoala.BuildScriptInjections
                 }
             }
         }
-		var process = new Process
-		{
-			StartInfo = new ProcessStartInfo
-			{
-				FileName = ""node.exe"",
-				UseShellExecute = false,
-				CreateNoWindow = true,
-				RedirectStandardInput = true,
-				RedirectStandardOutput = true,
-				RedirectStandardError = true,
-				Arguments = ""-i"",
+        var process = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = ""node.exe"",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                Arguments = ""-i"",
                 WorkingDirectory = pwd
-			}
-		};
+            }
+        };
 
-		var loadingScript = false;
-		process.OutputDataReceived += (sender, args) =>
-		{
-			if (!string.IsNullOrWhiteSpace(args.Data) && args.Data != ""> "" && args.Data != ""undefined"" && loadingScript)
-			{
-				var data = args.Data.Replace(""\r"","""").Replace(""\n"", ""\r\n"");
-				while (data.StartsWith(""> "") || Regex.IsMatch(data, @""\.+ "")) {
+        var loadingScript = false;
+        process.OutputDataReceived += (sender, args) =>
+        {
+            if (!string.IsNullOrWhiteSpace(args.Data) && args.Data != ""> "" && args.Data != ""undefined"" && loadingScript)
+            {
+                var data = args.Data.Replace(""\r"","""").Replace(""\n"", ""\r\n"");
+                while (data.StartsWith(""> "") || Regex.IsMatch(data, @""\.+ "")) {
                     if (data.StartsWith(""> "")) data = data.Substring(2);
                     if (Regex.IsMatch(data, @""\.+ "")) data = data.Substring(Regex.Match(data, @""\.+ "").ToString().Length);
                 }
                 if (data == ""undefined"") return;
-				if (Regex.IsMatch(data, ""\\w*Error: "")) {
-					BuildEngine.LogErrorEvent(new BuildErrorEventArgs("""", """", ScriptFile, 0, 0, 0, 0, data, """", """", DateTime.Now));
+                if (Regex.IsMatch(data, ""\\w*Error: "")) {
+                    BuildEngine.LogErrorEvent(new BuildErrorEventArgs("""", """", ScriptFile, 0, 0, 0, 0, data, """", """", DateTime.Now));
                     process.EnableRaisingEvents = false; // block stack trace; sorry, no support for JS stack trace when using REPL
                     runSuccess = false;
-				} else {
+                } else {
                     if (runSuccess) { // block stack trace; sorry, no support for JS stack trace when using REPL
 
-					    BuildEngine.LogMessageEvent(new BuildMessageEventArgs(data, """", """", MessageImportance.High));
+                        BuildEngine.LogMessageEvent(new BuildMessageEventArgs(data, """", """", MessageImportance.High));
                     }
-				}
-			}
-		};
-		process.ErrorDataReceived += (sender, args) =>
-		{
-			var data = args.Data;
+                }
+            }
+        };
+        process.ErrorDataReceived += (sender, args) =>
+        {
+            var data = args.Data;
             if (string.IsNullOrWhiteSpace(data)) return;
-			BuildEngine.LogErrorEvent(new BuildErrorEventArgs("""", """", ScriptFile, 0, 0, 0, 0, data, """", """", DateTime.Now));
+            BuildEngine.LogErrorEvent(new BuildErrorEventArgs("""", """", ScriptFile, 0, 0, 0, 0, data, """", """", DateTime.Now));
             runSuccess = false;
-		};
-		
-		process.Start();
-		process.EnableRaisingEvents = true;
-		process.BeginOutputReadLine();		
-		process.StandardInput.WriteLine(vars.ToString());
-		Thread.Sleep(250);
-		loadingScript = true;
-		process.StandardInput.WriteLine("".load "" + ScriptFile.Replace(""\\"", ""\\\\""));
-		process.StandardInput.WriteLine(""process.exit()"");
-		process.WaitForExit();
+        };
+        
+        process.Start();
+        process.EnableRaisingEvents = true;
+        process.BeginOutputReadLine();		
+        process.StandardInput.WriteLine(vars.ToString());
+        Thread.Sleep(250);
+        loadingScript = true;
+        process.StandardInput.WriteLine("".load "" + ScriptFile.Replace(""\\"", ""\\\\""));
+        process.StandardInput.WriteLine(""process.exit()"");
+        process.WaitForExit();
 
         Environment.CurrentDirectory = envdir;
-		
+        
         return runSuccess;
     ]]></Code>
         </Task>"

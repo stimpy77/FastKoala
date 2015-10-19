@@ -69,7 +69,7 @@ Write-Output ""`$MSBuildProjectDirectory = `""$MSBuildProjectDirectory`""""");
             addedItem.Properties.Item("ItemType").Value
                 = invokeAfter.Value ? "InvokeAfter" : "InvokeBefore";
             _logger.LogInfo("PowerShell script added to project: " + scriptFileName);
-            Task.Run(() =>
+            await Task.Run(() =>
             {
                 System.Threading.Thread.Sleep(250);
                 _dte.ExecuteCommand("File.OpenFile", "\"" + scriptFile + "\"");
@@ -165,12 +165,12 @@ Write-Output ""`$MSBuildProjectDirectory = `""$MSBuildProjectDirectory`""""");
         <Code Type=""Fragment"" Language=""cs""><![CDATA[
         if (!ScriptFile.ToLower().EndsWith("".ps1"")) return true;
         var envdir = Environment.CurrentDirectory;
-		BuildEngine.LogMessageEvent(new BuildMessageEventArgs(""Executing with PowerShell: "" + ScriptFile, """", """", MessageImportance.High));
+        BuildEngine.LogMessageEvent(new BuildMessageEventArgs(""Executing with PowerShell: "" + ScriptFile, """", """", MessageImportance.High));
         Project project = ProjectCollection.GlobalProjectCollection.GetLoadedProjects(BuildEngine.ProjectFileOfTaskNode).FirstOrDefault()
             ?? new Project(BuildEngine.ProjectFileOfTaskNode);
         if (!ScriptFile.Contains("":"") && !ScriptFile.StartsWith(""\\\\""))
             ScriptFile = project.DirectoryPath + ""\\"" + ScriptFile;
-		var pwd = Directory.GetParent(ScriptFile).FullName;
+        var pwd = Directory.GetParent(ScriptFile).FullName;
         var runspaceConfig = RunspaceConfiguration.Create();
         using (Runspace runspace = RunspaceFactory.CreateRunspace(runspaceConfig)) 
         { 
