@@ -1,11 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using EnvDTE;
+using EnvDTE80;
+using Microsoft.VisualStudio.Shell.Interop;
 using Wijits.FastKoala.Logging;
+using Constants = EnvDTE.Constants;
 using Thread = System.Threading.Thread;
 
 namespace Wijits.FastKoala
@@ -86,12 +90,79 @@ namespace Wijits.FastKoala
 
         public static Project GetProjectByName(this DTE dte, string projectName)
         {
-            return dte.Solution.Projects.Cast<Project>().SingleOrDefault(project => project.Name == projectName);
+            var ret = dte.Solution.Projects.Cast<Project>().SingleOrDefault(project => project.Name == projectName) ??
+                      FindProjectByUniqueName(dte, projectName);
+            return ret;
         }
 
         public static Project GetProjectByUniqueName(this DTE dte, string projectUniqueName)
         {
-            return dte.Solution.Projects.Cast<Project>().SingleOrDefault(project => project.UniqueName == projectUniqueName);
+            var ret = dte.Solution.Projects.Cast<Project>()
+                .SingleOrDefault(project => project.UniqueName == projectUniqueName) ??
+                      FindProjectByUniqueName(dte, projectUniqueName);
+            return ret;
+        }
+
+        // source: http://www.wwwlicious.com/2011/03/29/envdte-getting-all-projects-html/
+        public static IList<Project> Projects(this DTE dte)
+        {
+            Projects projects = dte.Solution.Projects;
+            List<Project> list = new List<Project>();
+            var item = projects.GetEnumerator();
+            while (item.MoveNext())
+            {
+                var project = item.Current as Project;
+                if (project == null)
+                {
+                    continue;
+                }
+
+                if (project.Kind == ProjectKinds.vsProjectKindSolutionFolder)
+                {
+                    list.AddRange(GetSolutionFolderProjects(project));
+                }
+                else
+                {
+                    list.Add(project);
+                }
+            }
+
+            return list;
+        }
+
+        // source: http://www.wwwlicious.com/2011/03/29/envdte-getting-all-projects-html/
+        private static IEnumerable<Project> GetSolutionFolderProjects(Project solutionFolder)
+        {
+            var list = new List<Project>();
+            for (var i = 1; i <= solutionFolder.ProjectItems.Count; i++)
+            {
+                var subProject = solutionFolder.ProjectItems.Item(i).SubProject;
+                if (subProject == null)
+                {
+                    continue;
+                }
+
+                // If this is another solution folder, do a recursive call, otherwise add
+                if (subProject.Kind == ProjectKinds.vsProjectKindSolutionFolder)
+                {
+                    list.AddRange(GetSolutionFolderProjects(subProject));
+                }
+                else
+                {
+                    list.Add(subProject);
+                }
+            }
+            return list;
+        }
+
+        private static Project FindProjectByUniqueName(this DTE dte, string projectUniqueName)
+        {
+            return Projects(dte).FirstOrDefault(project => project.UniqueName == projectUniqueName);
+        }
+
+        public static Project FindProjectByName(this DTE dte, string projectName)
+        {
+            return Projects(dte).FirstOrDefault(project => project.Name == projectName);
         }
 
         public static Project GetProjectByFullName(this DTE dte, string projectFullName)
