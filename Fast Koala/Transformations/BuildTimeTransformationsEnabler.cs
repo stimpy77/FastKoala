@@ -241,7 +241,7 @@ namespace Wijits.FastKoala.Transformations
                 {
                     await _io.Add(baseConfigFileFullPath);
                 }
-                AddItemToProject(baseConfigFileRelPath);
+                AddItemToProject("None", baseConfigFileRelPath);
             }
             await AddMissingTransforms(baseConfigFileFullPath);
 
@@ -285,7 +285,7 @@ namespace Wijits.FastKoala.Transformations
                     }
                 }
                 var projectItem = Project.GetProjectRoot().Items.SingleOrDefault(item => item.Include == xfrmRelPath)
-                                  ?? AddItemToProject(xfrmRelPath);
+                                  ?? AddItemToProject("None", xfrmRelPath);
                 // ReSharper disable once SimplifyLinqExpression
                 if (!projectItem.HasMetadata ||
                     !projectItem.Metadata.Any(m => m.Name == "DependentUpon"))
@@ -326,7 +326,7 @@ namespace Wijits.FastKoala.Transformations
                 {
                     await _io.Add(baseConfigFullPath);
                 }
-                AddItemToProject(baseConfigRelPath);
+                AddItemToProject("None", baseConfigRelPath);
 
                 foreach (var cfg in Project.ConfigurationManager.Cast<Configuration>().ToList())
                 {
@@ -342,7 +342,7 @@ namespace Wijits.FastKoala.Transformations
                         {
                             await _io.Add(xfrmFullPath);
                         }
-                        var item = AddItemToProject(xfrmpath);
+                        var item = AddItemToProject("None", xfrmpath);
                         item.AddMetadata("DependentUpon", baseConfigFile);
                     }
                 }
@@ -364,9 +364,9 @@ namespace Wijits.FastKoala.Transformations
                 // and update the proejct manifest reference to the file
                 var configItem = Project.GetProjectRoot().Items
                     .SingleOrDefault(item => item.Include.ToLower() == oldcfgfile.ToLower());
-                if (configItem == null) AddItemToProject(baseConfigRelPath);
+                if (configItem == null) AddItemToProject("None", baseConfigRelPath);
                 else configItem.Include = baseConfigRelPath;
-                AddItemToProject(oldcfgfile); // needs to be in the project manifest, but not in source control
+                AddItemToProject("Content", oldcfgfile); // needs to be in the project manifest, but not in source control
 
                 foreach (var cfg in Project.ConfigurationManager.Cast<Configuration>().ToList())
                 {
@@ -412,7 +412,7 @@ namespace Wijits.FastKoala.Transformations
                         }
                         if (!replaceXfrm)
                         {
-                            var item = AddItemToProject(xfrmpath);
+                            var item = AddItemToProject("None", xfrmpath);
                             item.AddMetadata("DependentUpon", newBaseConfigFile);
                         }
                     }
@@ -421,7 +421,7 @@ namespace Wijits.FastKoala.Transformations
                     var prjroot = Project.GetProjectRoot();
                     var xfrmitem = prjroot.Items.SingleOrDefault(item => item.Include.ToLower() == xfrmname.ToLower())
                                 ?? prjroot.Items.SingleOrDefault(item => item.Include.ToLower() == xfrmpath.ToLower());
-                    if (xfrmitem == null) xfrmitem = AddItemToProject(xfrmpath);
+                    if (xfrmitem == null) xfrmitem = AddItemToProject("None", xfrmpath);
                     else xfrmitem.Include = xfrmpath;
                     var metadata = xfrmitem.Metadata.SingleOrDefault(m => m.Name == "DependentUpon")
                                    ?? xfrmitem.AddMetadata("DependentUpon", newBaseConfigFile);
@@ -495,12 +495,12 @@ namespace Wijits.FastKoala.Transformations
             xml.Save(baseConfigFullPath);
         }
 
-        private ProjectItemElement AddItemToProject(string itemRelativePath)
+        private ProjectItemElement AddItemToProject(string buildAction, string itemRelativePath)
         {
             var projectRoot = Project.GetProjectRoot();
             var itemGroup = projectRoot.ItemGroups.LastOrDefault(ig => string.IsNullOrEmpty(ig.Condition))
                             ?? projectRoot.AddItemGroup();
-            return itemGroup.AddItem("None", itemRelativePath);
+            return itemGroup.AddItem(buildAction, itemRelativePath);
         }
 
         public Project Project
