@@ -167,6 +167,9 @@ namespace Wijits.FastKoala.Transformations
             trClickOnce.SetParameter("Source", @"$(ConfigDir)\App.Base.config");
             trClickOnce.SetParameter("Transform", @"$(ConfigDir)\App.$(Configuration).config");
             trClickOnce.SetParameter("Destination", @"App.config");
+            var trPrepBinOut = transformOnBuildTarget.AddTask("MakeDir");
+            trPrepBinOut.Condition = "'$(AppCfgType)' == 'App' and $(InlineAppCfgTransforms) != true and Exists('App.config') and !Exists('$(OutDir)')";
+            trPrepBinOut.SetParameter("Directories", "$(OutDir)");
             var trBinOut = transformOnBuildTarget.AddTask("TransformXml");
             trBinOut.Condition = "'$(AppCfgType)' == 'App' and $(InlineAppCfgTransforms) != true and Exists('App.config') and Exists('App.$(Configuration).config')";
             trBinOut.SetParameter("Source", @"App.config");
