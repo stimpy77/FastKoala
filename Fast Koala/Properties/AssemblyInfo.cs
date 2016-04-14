@@ -29,8 +29,8 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("1.1.31.0")]
-[assembly: AssemblyFileVersion("1.1.31.0")]
+[assembly: AssemblyVersion("1.1.32.0")]
+[assembly: AssemblyFileVersion("1.1.32.0")]
 
 [assembly: InternalsVisibleTo("Fast Koala_IntegrationTests, PublicKey=00240000048000009400000006020000002400005253413100040000010001004793b60c2639c976f66c6950e40439c1f1154d186019d3c43792a1109f0ce24264340b63276d370709a07fb4318ae1479b0205b5acf534dcc3821f7ff240081842cf6d55b2a5949d32d7ca430e6cd6f4d49c309068d44a1eeca68b86cbfa9d4d77add461fa4c1083cff7f79384094083745524b0be77b0df07e917f7a031d9aa")]
 [assembly: InternalsVisibleTo("Fast Koala_UnitTests, PublicKey=00240000048000009400000006020000002400005253413100040000010001004793b60c2639c976f66c6950e40439c1f1154d186019d3c43792a1109f0ce24264340b63276d370709a07fb4318ae1479b0205b5acf534dcc3821f7ff240081842cf6d55b2a5949d32d7ca430e6cd6f4d49c309068d44a1eeca68b86cbfa9d4d77add461fa4c1083cff7f79384094083745524b0be77b0df07e917f7a031d9aa")]
