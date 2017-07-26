@@ -10,10 +10,7 @@ namespace Wijits.FastKoala
         private Microsoft.Web.Publishing.Tasks.TransformXml _xfrm;
         public MSBuildXmlTransformer()
         {
-            _xfrm = new Microsoft.Web.Publishing.Tasks.TransformXml
-            {
-                BuildEngine = new XmlTransformerEngineStub()
-            };
+            _xfrm = new Microsoft.Web.Publishing.Tasks.TransformXml();
         }
 
         public string Source

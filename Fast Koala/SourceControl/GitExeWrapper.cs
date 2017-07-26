@@ -8,7 +8,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using EnvDTE;
 using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio.TeamFoundation.VersionControl;
 using Wijits.FastKoala.Logging;
 using Wijits.FastKoala.Utilities;
 using Process = System.Diagnostics.Process;
