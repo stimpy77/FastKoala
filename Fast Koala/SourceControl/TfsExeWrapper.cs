@@ -7,7 +7,6 @@ using System.Text;
 using System.Threading.Tasks;
 using EnvDTE80;
 using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio.TeamFoundation.VersionControl;
  
 using Wijits.FastKoala.Logging;
 using Wijits.FastKoala.Utilities;
@@ -33,13 +32,6 @@ namespace Wijits.FastKoala.SourceControl
         {
             try
             {
-                var vp = VsEnvironment.GetService<IVersionControlProvider>();
-                if (vp != null)
-                {
-                    bool isBound;
-                    vp.IsFileBoundToSCC(filename, out isBound);
-                    return isBound;
-                }
                 var statusOutput = TaskResult = await TfExec("info \"" + filename + "\"");
                 if (statusOutput.StartsWith("No items match")) return false;
                 return true;
@@ -53,28 +45,6 @@ namespace Wijits.FastKoala.SourceControl
                 return false;
             }
 
-        }
-
-        /// <summary>
-        /// Get the VersionControlExt extensibility object.
-        /// </summary>
-        public static object GetVersionControlExt(IServiceProvider serviceProvider)
-        {
-            if (serviceProvider != null)
-            {
-                DTE2 dte = serviceProvider.GetService(typeof (SDTE)) as DTE2;
-                if (dte != null)
-                {
-
-                    object ret = dte.GetObject("Microsoft.VisualStudio.TeamFoundation.VersionControl.VersionControlExt");
-                    var t = ret.GetType();
-                    var a = t.Assembly;
-                    var f = a.Location;
-                    return ret;
-                }
-            }
-
-            return null;
         }
 
         public async Task<bool> Add(string filename)
