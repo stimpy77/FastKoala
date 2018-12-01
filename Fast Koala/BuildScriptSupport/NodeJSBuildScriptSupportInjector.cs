@@ -131,6 +131,8 @@ namespace Wijits.FastKoala.BuildScriptInjections
             inlineTaskVersionDep_v12.Condition = "'$(MSBuildToolsVersion)' == '12'";
             var inlineTaskVersionDep_v14 = inlineTaskVersionDep_group.AddProperty("InlineTaskVersionDep", "Core");
             inlineTaskVersionDep_v14.Condition = "'$(MSBuildToolsVersion)' == '14'";
+            var inlineTaskVersionDep_v15 = inlineTaskVersionDep_group.AddProperty("InlineTaskVersionDep", "Core");
+            inlineTaskVersionDep_v15.Condition = "'$(MSBuildToolsVersion)' == '15'";
             var usingTask = projRoot.AddUsingTask("InvokeNodeJS",
                 @"$(MSBuildToolsPath)\Microsoft.Build.Tasks.$(InlineTaskVersionDep).dll", null);
             usingTask.TaskFactory = "CodeTaskFactory";
