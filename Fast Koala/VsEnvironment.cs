@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using EnvDTE;
 using EnvDTE80;
-using Microsoft.VisualStudio.Shell.Interop;
 using Wijits.FastKoala.Logging;
 using Constants = EnvDTE.Constants;
 using Thread = System.Threading.Thread;
@@ -117,7 +116,7 @@ namespace Wijits.FastKoala
                     continue;
                 }
 
-                if (project.Kind == ProjectKinds.vsProjectKindSolutionFolder)
+                if (project.Kind == ProjectKindsInternal.vsProjectKindSolutionFolder)
                 {
                     list.AddRange(GetSolutionFolderProjects(project));
                 }
@@ -143,7 +142,7 @@ namespace Wijits.FastKoala
                 }
 
                 // If this is another solution folder, do a recursive call, otherwise add
-                if (subProject.Kind == ProjectKinds.vsProjectKindSolutionFolder)
+                if (subProject.Kind == ProjectKindsInternal.vsProjectKindSolutionFolder)
                 {
                     list.AddRange(GetSolutionFolderProjects(subProject));
                 }

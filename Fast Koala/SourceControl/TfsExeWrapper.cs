@@ -23,6 +23,8 @@ namespace Wijits.FastKoala.SourceControl
         {
             var vsPath = Process.GetCurrentProcess().Modules[0].FileName;
             _tfexe = Path.Combine(Directory.GetParent(vsPath).FullName, "tf.exe");
+            if (!File.Exists(_tfexe))
+                _tfexe = Path.Combine(Directory.GetParent(vsPath).FullName, @"CommonExtensions\Microsoft\TeamFoundation\Team Explorer\tf.exe");
             if (!File.Exists(_tfexe)) _tfexe = null;
             _workingDirectory = workingDirectory;
             _logger = logger;
@@ -49,6 +51,7 @@ namespace Wijits.FastKoala.SourceControl
 
         public async Task<bool> Add(string filename)
         {
+            this._logger.LogInfo("(The next command may take a minute or two.)");
             TaskResult = await TfExec("add \"" + filename + "\"");
             return true;
         }
@@ -65,6 +68,7 @@ namespace Wijits.FastKoala.SourceControl
 
         public async Task Checkout(string filename)
         {
+            this._logger.LogInfo("(The next command may take a minute or two.)");
             TaskResult = await TfExec("checkout \"" + filename + "\"");
         }
 

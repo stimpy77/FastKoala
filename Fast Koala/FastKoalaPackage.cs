@@ -324,7 +324,7 @@ namespace Wijits.FastKoala
             }
         }
 
-        private async Task<BuildTimeTransformationsEnabler> GetTransformationsEnabler(Project project)
+        private async Task<BuildTimeTransformationsEnabler> GetTransformationsEnabler(Project project, bool quick = false)
         {
             string projectName = null;
             string projectFullName = null;
@@ -337,7 +337,7 @@ namespace Wijits.FastKoala
             if (string.IsNullOrEmpty(projectName) || string.IsNullOrEmpty(projectFullName))
                 return null;
             var logger = Dte.GetLogger();
-            var io = await VsFileSystemManipulatorFactory.GetFileSystemManipulatorForEnvironment(project);
+            var io = quick ? new NonSccBasicFileSystem() : await VsFileSystemManipulatorFactory.GetFileSystemManipulatorForEnvironment(project);
             var nativeWindow = GetNativeWindow();
             Debug.Assert(project != null, "project != null");
             return new BuildTimeTransformationsEnabler(project, logger, io, nativeWindow);
@@ -634,7 +634,7 @@ namespace Wijits.FastKoala
                 var project = GetSelectedProject();
                 if (project == null) return;
 
-                var transformationsEnabler = await GetTransformationsEnabler(project);
+                var transformationsEnabler = await GetTransformationsEnabler(project, quick: true);
                 if (transformationsEnabler == null) return;
                 if (!transformationsEnabler.CanEnableBuildTimeTransformations)
                     return;
