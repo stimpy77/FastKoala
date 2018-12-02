@@ -51,7 +51,7 @@ namespace Wijits.FastKoala
         private uint _solutionEventsCookie;
         private bool shownErrorMsg = false;
 
-        public const string FastKoalaMaintainerEmail = "jon@wijits.com";
+        public const string FastKoalaMaintainerEmail = "jon@jondavis.net";
 
         /////////////////////////////////////////////////////////////////////////////
         // Overridden Package Implementation

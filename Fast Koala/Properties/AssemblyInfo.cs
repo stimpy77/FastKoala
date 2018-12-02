@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Fast Koala")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Wijits.com")]
+[assembly: AssemblyCompany("Jonathan Michael Davis")]
 [assembly: AssemblyProduct("Fast Koala")]
 [assembly: AssemblyCopyright("")]
 [assembly: AssemblyTrademark("")]
