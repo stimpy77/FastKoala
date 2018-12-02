@@ -55,7 +55,7 @@ For web apps, which use inline transformations in a nested folder, the default f
 
 Web sites are not supported and will never be supported.
 
-ASP.NET 5 is not supported; it might not ever be supported.
+.NET Core projects are not supported; they might not ever be supported.
 
 ### How build-time transformations work
 
