@@ -1,5 +1,5 @@
 # Fast Koala
-Enables build-time config transforms for various project types including ASP.NET 4.6-or-below web apps (but not web sites). It also supports adding an unlimited number of PowerShell scripts with the MSBuild project properties fully exposed, executing either before build or after build, as well as add MSBuild scripts (Imports directives to custom .targets files) to a project.
+Enables build-time config transforms for various project types including ASP.NET 4.x-or-below web apps (but not web sites). It also supports adding an unlimited number of PowerShell scripts with the MSBuild project properties fully exposed, executing either before build or after build, as well as add MSBuild scripts (Imports directives to custom .targets files) to a project.
 
 There are future plans to also ease config name management.
 
@@ -18,7 +18,7 @@ You **do not** need Fast Koala to be installed once its changes have been applie
 All references to "build-time" refer to F6 (Build) or F5 ([Build and] Debug). This means that you can finally test web apps with different configuration transformations applied *without* publishing, you can simply select the configuration and hit F5.
 
 ### Inline Build-Time Transformations
-This tool enables build-time transformations for ASP.NET 4.6-or-below web apps (not websites), including ASP.NET MVC 5.
+This tool enables build-time transformations for ASP.NET 4.x-or-below web apps (not websites), including ASP.NET MVC 5.
 
     Web.config
     Web.Debug.config
