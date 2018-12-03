@@ -1,8 +1,6 @@
 # Fast Koala
 Enables build-time config transforms for various project types including ASP.NET 4.x-or-below web apps (but not web sites). It also supports adding an unlimited number of PowerShell scripts with the MSBuild project properties fully exposed, executing either before build or after build, as well as add MSBuild scripts (Imports directives to custom .targets files) to a project.
 
-There are future plans to also ease config name management.
-
 You **do not** need Fast Koala to be installed once its changes have been applied to a project. A TFS build server would need no knowledge of Fast Koala for any of Fast Koala's changes to be effective.
 
 [![Contact me on Codementor](https://cdn.codementor.io/badges/contact_me_github.svg)](https://www.codementor.io/solutionsjon?utm_source=github&utm_medium=button&utm_term=solutionsjon&utm_campaign=github)
@@ -39,6 +37,9 @@ This tool also supports enabling build-time transformations for class library pr
 
 ### Where to get it
 You can download the official current release from the gallery here:
+https://marketplace.visualstudio.com/items?itemName=JonDaviswijitscom.FastKoala-WebAppconfigXMLtransforms-19130
+
+(For VS2015:)
 https://visualstudiogallery.msdn.microsoft.com/7bc82ddf-e51b-4bb4-942f-d76526a922a0
 
 ### How to use
@@ -54,7 +55,7 @@ For web apps, which use inline transformations in a nested folder, the default f
 
 Web sites are not supported and will never be supported.
 
-ASP.NET 5 is not supported; it might not ever be supported.
+.NET Core projects are not supported; they might not ever be supported.
 
 ### How build-time transformations work
 
