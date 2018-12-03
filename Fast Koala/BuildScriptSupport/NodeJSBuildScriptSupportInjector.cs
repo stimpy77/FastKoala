@@ -276,6 +276,19 @@ namespace Wijits.FastKoala.BuildScriptInjections
     ]]></Code>
         </Task>"
                       + projXml.Substring(injectLocation);
+
+            // Due to a glitch (?) in VS's flavor of MSBuild, we have to move <UsingTask>'s to before various <Import>s.
+            if (projXml.Contains("<Import"))
+            {
+                var xmlDoc = new XmlDocument();
+                xmlDoc.LoadXml(projXml.Replace(" xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\"", ""));
+                var task = xmlDoc.SelectSingleNode("/Project/UsingTask[@TaskName=\"InvokeNodeJS\"]");
+                xmlDoc.SelectSingleNode("Project").InsertBefore(task, xmlDoc.SelectNodes("/Project/Import")[0]);
+                projXml = xmlDoc.OuterXml;
+                projXml.Insert(projXml.IndexOf(">", projXml.IndexOf("<Project")), " xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\"");
+            }
+
+
             if (await _io.ItemIsUnderSourceControl(projectRootPath)) await _io.Checkout(projectRootPath);
             File.WriteAllText(projectRootPath, projXml);
             _logger.LogInfo("Project file is now updated.");
