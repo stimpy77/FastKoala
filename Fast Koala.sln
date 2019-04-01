@@ -1,33 +1,28 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26430.16
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28721.148
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B06ED572-501E-47BE-8A0B-70480372DDD8}"
-	ProjectSection(SolutionItems) = preProject
-		README.md = README.md
-	EndProjectSection
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fast Koala", "Fast Koala\Fast Koala.csproj", "{DA5E3103-73B9-4985-8097-1A4E56C8128E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fast Koala", "Fast Koala\Fast Koala.csproj", "{676122D2-D4D4-4CA9-A18F-49271098AF86}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		AppVeyor|Any CPU = AppVeyor|Any CPU
-		Debug - VS2017|Any CPU = Debug - VS2017|Any CPU
+		Debug - VS2019|Any CPU = Debug - VS2019|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{DA5E3103-73B9-4985-8097-1A4E56C8128E}.AppVeyor|Any CPU.ActiveCfg = AppVeyor|Any CPU
-		{DA5E3103-73B9-4985-8097-1A4E56C8128E}.AppVeyor|Any CPU.Build.0 = AppVeyor|Any CPU
-		{DA5E3103-73B9-4985-8097-1A4E56C8128E}.Debug - VS2017|Any CPU.ActiveCfg = Debug - VS2017|Any CPU
-		{DA5E3103-73B9-4985-8097-1A4E56C8128E}.Debug - VS2017|Any CPU.Build.0 = Debug - VS2017|Any CPU
-		{DA5E3103-73B9-4985-8097-1A4E56C8128E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DA5E3103-73B9-4985-8097-1A4E56C8128E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{676122D2-D4D4-4CA9-A18F-49271098AF86}.AppVeyor|Any CPU.ActiveCfg = AppVeyor|Any CPU
+		{676122D2-D4D4-4CA9-A18F-49271098AF86}.AppVeyor|Any CPU.Build.0 = AppVeyor|Any CPU
+		{676122D2-D4D4-4CA9-A18F-49271098AF86}.Debug - VS2019|Any CPU.ActiveCfg = Debug - VS2019|Any CPU
+		{676122D2-D4D4-4CA9-A18F-49271098AF86}.Debug - VS2019|Any CPU.Build.0 = Debug - VS2019|Any CPU
+		{676122D2-D4D4-4CA9-A18F-49271098AF86}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{676122D2-D4D4-4CA9-A18F-49271098AF86}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		EnterpriseLibraryConfigurationToolBinariesPathV6 = packages\EnterpriseLibrary.TransientFaultHandling.6.0.1304.0\lib\portable-net45+win+wp8;packages\EnterpriseLibrary.TransientFaultHandling.Data.6.0.1304.1\lib\NET45
+		SolutionGuid = {D61584F3-09B4-41BF-83EF-5B12676D0C3E}
 	EndGlobalSection
 EndGlobal

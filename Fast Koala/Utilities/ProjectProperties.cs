@@ -11,6 +11,7 @@ namespace Wijits.FastKoala.Utilities
         private string _projectName;
         public ProjectProperties(Project project)
         {
+            Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
             _dte = project.DTE;
             Project = project;
         }
@@ -19,11 +20,20 @@ namespace Wijits.FastKoala.Utilities
         {
             get
             {
-                return _dte.GetProjectByUniqueName(_projectUniqueName)
-                    ?? _dte.GetProjectByName(_projectName);
+                var t = _dte.GetProjectByUniqueNameAsync(_projectUniqueName);
+                t.ConfigureAwait(true);
+                var result = t.Result;
+                if (result == null)
+                {
+                    t = _dte.GetProjectByNameAsync(_projectName);
+                    t.ConfigureAwait(true);
+                    result = t.Result;
+                }
+                return result;
             }
             set
             {
+                Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
                 _projectName = value.Name;
                 _projectUniqueName = value.UniqueName;
             }

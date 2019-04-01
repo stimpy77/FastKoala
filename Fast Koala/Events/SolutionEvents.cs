@@ -21,7 +21,8 @@ namespace Wijits.FastKoala.Events
 
         int IVsSolutionEvents.OnAfterCloseSolution(object pUnkReserved)
         {
-            if (AfterCloseSolution != null) AfterCloseSolution(VsEnvironment.Dte.Solution, new EventArgs());
+            Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
+            AfterCloseSolution?.Invoke(VsEnvironment.Dte.Solution, new EventArgs());
             return VSConstants.S_OK;
         }
 
@@ -57,12 +58,12 @@ namespace Wijits.FastKoala.Events
 
         int IVsSolutionEvents.OnAfterOpenSolution(object pUnkReserved, int fNewSolution)
         {
-            if (AfterOpenSolution != null)
-                AfterOpenSolution(VsEnvironment.Dte.Solution, new AfterOpenSolutionEventArgs
-                {
-                    Solution = VsEnvironment.Dte.Solution,
-                    NewSolution = fNewSolution == 1
-                });
+            Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
+            AfterOpenSolution?.Invoke(VsEnvironment.Dte.Solution, new AfterOpenSolutionEventArgs
+            {
+                Solution = VsEnvironment.Dte.Solution,
+                NewSolution = fNewSolution == 1
+            });
             return VSConstants.S_OK;
         }
 
@@ -83,6 +84,7 @@ namespace Wijits.FastKoala.Events
 
         int IVsSolutionEvents.OnBeforeCloseSolution(object pUnkReserved)
         {
+            Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
             if (BeforeCloseSolution != null)
             {
                 var solution = VsEnvironment.Dte.Solution;
@@ -121,6 +123,7 @@ namespace Wijits.FastKoala.Events
 
         int IVsSolutionEvents.OnQueryCloseSolution(object pUnkReserved, ref int pfCancel)
         {
+            Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
             if (QueryCloseSolution != null)
             {
                 var solution = VsEnvironment.Dte.Solution;

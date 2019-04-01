@@ -7,10 +7,12 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
 using EnvDTE;
+using Microsoft.VisualStudio.Shell;
 using Wijits.FastKoala.BuildScriptSupport;
 using Wijits.FastKoala.Logging;
 using Wijits.FastKoala.SourceControl;
 using Wijits.FastKoala.Utilities;
+using Task = System.Threading.Tasks.Task;
 // ReSharper disable LocalizableElement
 // ReSharper disable SimplifyLinqExpression
 
@@ -28,6 +30,7 @@ namespace Wijits.FastKoala.BuildScriptInjections
 
         public TargetsScriptInjector(EnvDTE.Project project, ISccBasicFileSystem io, ILogger logger, IWin32Window ownerWindow)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             _dte = project.DTE;
             _projectUniqueName = project.UniqueName;
             _io = io;
@@ -37,20 +40,21 @@ namespace Wijits.FastKoala.BuildScriptInjections
             _ownerWindow = ownerWindow;
         }
         
-        public async Task<bool> AddProjectInclude(string containerDirectory, string scriptFile = null)
+        public async Task<bool> AddProjectIncludeAsync(string containerDirectory, string scriptFile = null)
         {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             if (!Project.Saved)
             {
                 var saveDialogResult = MessageBox.Show(_ownerWindow, "Save pending changes to solution?",
                     "Save pending changes", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (saveDialogResult == DialogResult.OK || saveDialogResult == DialogResult.Yes)
-                    _dte.SaveAll();
+                    await _dte.SaveAllAsync();
             }
             if (!Project.Saved || string.IsNullOrEmpty(Project.FullName))
             {
                 var saveDialogResult = MessageBox.Show(_ownerWindow, "Pending changes need to be saved. Please save the project before adding project imports, then retry.", "Save first",
                     MessageBoxButtons.OKCancel, MessageBoxIcon.Asterisk);
-                if (saveDialogResult != DialogResult.Cancel) _dte.SaveAll();
+                if (saveDialogResult != DialogResult.Cancel) await _dte.SaveAllAsync();
                 return false;
             }
             _logger.LogInfo("Begin adding project import file");
@@ -95,15 +99,16 @@ You must not move, rename, or remove this file once it has been added to the pro
             var projRoot = Project.GetProjectRoot();
             var import = projRoot.AddImport(scriptFileRelativePath);
             import.Condition = "Exists('" + scriptFileRelativePath + "')";
-            Project = await Project.SaveProjectRoot();
+            Project = await Project.SaveProjectRootAsync();
             var addedItem = Project.ProjectItems.AddFromFile(scriptFile);
             addedItem.Properties.Item("ItemType").Value = "None";
             _logger.LogInfo("Project include file added to project: " + scriptFileName);
-            Task.Run(() =>
-            {
-                System.Threading.Thread.Sleep(250);
-                _dte.ExecuteCommand("File.OpenFile", "\"" + scriptFile + "\"");
-            });
+            await Task.Run(async () =>
+             {
+                 System.Threading.Thread.Sleep(250);
+                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                 _dte.ExecuteCommand("File.OpenFile", "\"" + scriptFile + "\"");
+             });
             return true;
         }
 
@@ -112,11 +117,20 @@ You must not move, rename, or remove this file once it has been added to the pro
         {
             get
             {
-                return _dte.GetProjectByUniqueName(_projectUniqueName)
-                       ?? _dte.GetProjectByName(_projectName);
+                var t = _dte.GetProjectByUniqueNameAsync(_projectUniqueName);
+                t.ConfigureAwait(true);
+                var result = t.Result;
+                if (result == null)
+                {
+                    t = _dte.GetProjectByNameAsync(_projectName);
+                    t.ConfigureAwait(true);
+                    result = t.Result;
+                }
+                return result;
             }
             set
             {
+                ThreadHelper.ThrowIfNotOnUIThread();
                 if (value == null) return;
                 _projectName = value.Name;
                 _projectUniqueName = value.UniqueName;

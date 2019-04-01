@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using EnvDTE;
@@ -20,9 +21,63 @@ using Wijits.FastKoala.Logging;
 using Wijits.FastKoala.SourceControl;
 using Wijits.FastKoala.Transformations;
 using Wijits.FastKoala.Utilities;
+using Task = System.Threading.Tasks.Task;
 
 namespace Wijits.FastKoala
 {
+    ///// <summary>
+    ///// This is the class that implements the package exposed by this assembly.
+    ///// </summary>
+    ///// <remarks>
+    ///// <para>
+    ///// The minimum requirement for a class to be considered a valid package for Visual Studio
+    ///// is to implement the IVsPackage interface and register itself with the shell.
+    ///// This package uses the helper classes defined inside the Managed Package Framework (MPF)
+    ///// to do it: it derives from the Package class that provides the implementation of the
+    ///// IVsPackage interface and uses the registration attributes defined in the framework to
+    ///// register itself and its components with the shell. These attributes tell the pkgdef creation
+    ///// utility what data to put into .pkgdef file.
+    ///// </para>
+    ///// <para>
+    ///// To get loaded into VS, the package must be referred by &lt;Asset Type="Microsoft.VisualStudio.VsPackage" ...&gt; in .vsixmanifest file.
+    ///// </para>
+    ///// </remarks>
+    //[PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
+    //[Guid(FastKoalaPackage.PackageGuidString)]
+    //public sealed class FastKoalaPackage : AsyncPackage
+    //{
+    //    /// <summary>
+    //    /// FastKoalaPackage GUID string.
+    //    /// </summary>
+    //    public const string PackageGuidString = "f7159ba3-9f0f-4d2b-afbb-eeee12814d9d";
+
+    //    #region Package Members
+
+    //    /// <summary>
+    //    /// Initialization of the package; this method is called right after the package is sited, so this is the place
+    //    /// where you can put all the initialization code that rely on services provided by VisualStudio.
+    //    /// </summary>
+    //    /// <param name="cancellationToken">A cancellation token to monitor for initialization cancellation, which can occur when VS is shutting down.</param>
+    //    /// <param name="progress">A provider for progress updates.</param>
+    //    /// <returns>A task representing the async work of package initialization, or an already completed task if there is none. Do not return null from this method.</returns>
+    //    protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
+    //    {
+    //        // When initialized asynchronously, the current thread may be a background thread at this point.
+    //        // Do any initialization that requires the UI thread after switching to the UI thread.
+    //        await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+    //    }
+
+    //    #endregion
+    //}
+
+
+
+
+
+
+
+
+
     /// <summary>
     ///     This is the class that implements the package exposed by this assembly.
     ///     The minimum requirement for a class to be considered a valid package for Visual Studio
@@ -34,16 +89,16 @@ namespace Wijits.FastKoala
     /// </summary>
     // This attribute tells the PkgDef creation utility (CreatePkgDef.exe) that this class is
     // a package.
-    [PackageRegistration(UseManagedResourcesOnly = true)]
+    [PackageRegistration(AllowsBackgroundLoading = true, UseManagedResourcesOnly = true)]
     // This attribute is used to register the information needed to show this package
     // in the Help/About dialog of Visual Studio.
     [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)]
     // This attribute is needed to let the shell know that this package exposes some menus.
     [ProvideMenuResource("Menus.ctmenu", 1)]
-    [ProvideAutoLoad(UIContextGuids80.SolutionExists)]
+    [ProvideAutoLoad(UIContextGuids.SolutionExists, PackageAutoLoadFlags.BackgroundLoad)]
     [Guid(GuidList.guidFastKoalaPkgString)]
     [SuppressMessage("ReSharper", "MemberCanBeMadeStatic.Local")]
-    public sealed class FastKoalaPackage : Package
+    public sealed class FastKoalaPackage : AsyncPackage
     {
         private DocumentEvents _documentEvents;
         private BuildEvents _buildEvents;
@@ -62,20 +117,20 @@ namespace Wijits.FastKoala
         ///     Initialization of the package; this method is called right after the package is sited, so this is the place
         ///     where you can put all the initialization code that rely on services provided by VisualStudio.
         /// </summary>
-        protected override void Initialize()
+        protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
             Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "Entering Initialize() of: {0}", ToString()));
             base.Initialize();
             VsEnvironment.Initialize(this);
 
-            SubscribeDteEvents();
+            await SubscribeDteEventsAsync(cancellationToken);
 
             // Add our command handlers for menu (commands must exist in the .vsct file)
-            var mcs = GetService(typeof (IMenuCommandService)) as OleMenuCommandService;
+            var mcs = await GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
             if (null == mcs) return;
 
             var enableBuildTimeTransformationsCmd = new CommandID(GuidList.guidFastKoalaProjItemMenuCmdSet,
-                (int) PkgCmdIDList.cmdidEnableBuildTimeTransformationsProjItem);
+                (int)PkgCmdIDList.cmdidEnableBuildTimeTransformationsProjItem);
             var enableBuildTimeTransformationsMenuItem =
                 new OleMenuCommand(EnableBuildTimeTransformationsMenuItem_Invoke, enableBuildTimeTransformationsCmd);
             enableBuildTimeTransformationsMenuItem.BeforeQueryStatus +=
@@ -83,7 +138,7 @@ namespace Wijits.FastKoala
             mcs.AddCommand(enableBuildTimeTransformationsMenuItem);
 
             var enableBuildTimeTransformationsProjCmd = new CommandID(GuidList.guidFastKoalaProjMenuCmdSet,
-                (int) PkgCmdIDList.cmdidEnableBuildTimeTransformationsProj);
+                (int)PkgCmdIDList.cmdidEnableBuildTimeTransformationsProj);
             var enableBuildTimeTransformationsProjectMenuItem =
                 new OleMenuCommand(EnableBuildTimeTransformationsMenuItem_Invoke,
                     enableBuildTimeTransformationsProjCmd);
@@ -122,13 +177,17 @@ namespace Wijits.FastKoala
             addNodeJSScriptMenuItem.BeforeQueryStatus +=
                 AddNodeJSScriptMenuItem_BeforeQueryStatus;
             mcs.AddCommand(addNodeJSScriptMenuItem);
+
+            await base.InitializeAsync(cancellationToken, progress);
         }
 
-        private void SubscribeDteEvents()
+        private async Task SubscribeDteEventsAsync(CancellationToken cancellationToken)
         {
+            await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
             (_documentEvents ?? (_documentEvents = Dte.Events.DocumentEvents))
                 .DocumentOpened += OnDocumentOpened;
-            
+
             (_buildEvents ?? (_buildEvents = Dte.Events.BuildEvents))
                 .OnBuildBegin += BuildEventsOnOnBuildBegin;
             _buildEvents.OnBuildDone += BuildEventsOnOnBuildDone;
@@ -136,7 +195,7 @@ namespace Wijits.FastKoala
                 .ProjectRenamed += OnProjectRenamed;
 
             // credit: http://www.mztools.com/articles/2014/MZ2014024.aspx
-            var _solution = GetService(typeof(SVsSolution)) as IVsSolution;
+            var _solution = await GetServiceAsync(typeof(SVsSolution)) as IVsSolution;
             if (_solution != null)
             {
                 _solutionEventsHandler = new SolutionEventsWrapper();
@@ -154,13 +213,14 @@ namespace Wijits.FastKoala
             MonitorConfigFileChanges(project);
         }
 
-        private void OnProjectRenamed(Project project, string oldName)
+        private async void OnProjectRenamed(Project project, string oldName)
         {
             if (_configWatchers.ContainsKey(oldName))
             {
                 var cfgwatcher = _configWatchers[oldName];
                 cfgwatcher.Dispose();
                 _configWatchers.Remove(oldName);
+                await this.JoinableTaskFactory.SwitchToMainThreadAsync(this.DisposalToken);
                 _configWatchers[project.Name] = new ConfigWatcher(project);
             }
         }
@@ -177,8 +237,9 @@ namespace Wijits.FastKoala
             MonitorConfigFileChanges(project);
         }
 
-        private void MonitorConfigFileChanges(Project project)
+        private async void MonitorConfigFileChanges(Project project)
         {
+            await this.JoinableTaskFactory.SwitchToMainThreadAsync(this.DisposalToken);
             var projectName = project.Name;
             if (_configWatchers.ContainsKey(projectName)) return;
             var configWatcher = new ConfigWatcher(project);
@@ -189,12 +250,14 @@ namespace Wijits.FastKoala
         private object appConfigFileChangedMessageLock = new object();
         private Cursor previousCursor;
         private bool _building;
-        private void OnAppConfigFileChanged(object sender, AppConfigFileChangedEventArgs appConfigFileChangedEventArgs)
+        private async void OnAppConfigFileChanged(object sender, AppConfigFileChangedEventArgs appConfigFileChangedEventArgs)
         {
-//#if !DEBUG
+            await this.JoinableTaskFactory.SwitchToMainThreadAsync(this.DisposalToken);
+            
+            //#if !DEBUG
             try
             {
-//#endif
+                //#endif
                 if (_building || ((ConfigWatcher)sender).IsBuilding) return;
                 var project = appConfigFileChangedEventArgs.Project;
                 string projectFullName;
@@ -254,20 +317,22 @@ namespace Wijits.FastKoala
                         _building = false;
                     }
                 }
-//#if !DEBUG
+                //#if !DEBUG
             }
             catch (Exception e)
             {
-                Dte.GetLogger().LogError(e.GetType().Name + " - " + e.ToString());
+                (await Logger()).LogError(e.GetType().Name + " - " + e.ToString());
             }
-//#endif
+            //#endif
         }
 
-        private void OnBeforeCloseProject(object sender, BeforeCloseProjectEventArgs beforeCloseProjectEventArgs)
+        private async void OnBeforeCloseProject(object sender, BeforeCloseProjectEventArgs beforeCloseProjectEventArgs)
         {
+            await this.JoinableTaskFactory.SwitchToMainThreadAsync(this.DisposalToken);
+            dynamic hierarchy = beforeCloseProjectEventArgs.Hierarchy;
             var project = beforeCloseProjectEventArgs.Project;
-            var projectName = project.Name;
-            if (_configWatchers.ContainsKey(projectName))
+            var projectName = project?.Name ?? hierarchy.Name as string;
+            if (!string.IsNullOrWhiteSpace(projectName) && _configWatchers.ContainsKey(projectName))
             {
                 _configWatchers[projectName].Dispose();
                 _configWatchers.Remove(projectName);
@@ -290,6 +355,8 @@ namespace Wijits.FastKoala
 
         private async void OnDocumentOpened(Document document)
         {
+            await this.JoinableTaskFactory.SwitchToMainThreadAsync(this.DisposalToken);
+
             // make Web.config / App.config read-only in editor if it was generated
             try
             {
@@ -297,13 +364,13 @@ namespace Wijits.FastKoala
                 var fileFullName = document.FullName;
                 var fileInfo = new FileInfo(fileFullName);
                 if (fileInfo.Extension.Replace(".", "").ToLower() != "config") return;
-                var project = GetSelectedProject();
+                var project = await GetSelectedProjectAsync();
                 if (project != null)
                 {
-                    var transforms = await GetTransformationsEnabler(project);
+                    var transforms = await GetTransformationsEnablerAsync(project);
                     if (transforms == null) return;
                     var properties = transforms.ProjectProperties;
-                    if (transforms.HasBuildTimeTransformationsEnabled && 
+                    if (transforms.HasBuildTimeTransformationsEnabled &&
                         properties.InlineAppCfgTransforms == true &&
                         fileInfo.Name.ToLower() == properties.AppCfgType.ToLower() + ".config")
                     {
@@ -324,8 +391,9 @@ namespace Wijits.FastKoala
             }
         }
 
-        private async Task<BuildTimeTransformationsEnabler> GetTransformationsEnabler(Project project, bool quick = false)
+        private async Task<BuildTimeTransformationsEnabler> GetTransformationsEnablerAsync(Project project, bool quick = false)
         {
+            await this.JoinableTaskFactory.SwitchToMainThreadAsync(this.DisposalToken);
             string projectName = null;
             string projectFullName = null;
             try
@@ -336,8 +404,8 @@ namespace Wijits.FastKoala
             catch { }
             if (string.IsNullOrEmpty(projectName) || string.IsNullOrEmpty(projectFullName))
                 return null;
-            var logger = Dte.GetLogger();
-            var io = quick ? new NonSccBasicFileSystem() : await VsFileSystemManipulatorFactory.GetFileSystemManipulatorForEnvironment(project);
+            var logger = (await Logger());
+            var io = quick ? new NonSccBasicFileSystem() : await VsFileSystemManipulatorFactory.GetFileSystemManipulatorForEnvironmentAsync(project);
             var nativeWindow = GetNativeWindow();
             Debug.Assert(project != null, "project != null");
             return new BuildTimeTransformationsEnabler(project, logger, io, nativeWindow);
@@ -350,14 +418,16 @@ namespace Wijits.FastKoala
 
         private DTE Dte
         {
-            get { return (DTE) GetService(typeof (DTE)); }
+            get { ThreadHelper.ThrowIfNotOnUIThread(); return (DTE)GetService(typeof(DTE)); }
         }
 
-        private Project GetSelectedProject()
+        private async Task<Project> GetSelectedProjectAsync()
         {
             try
             {
-                var monitorSelection = GetGlobalService(typeof (SVsShellMonitorSelection)) as IVsMonitorSelection;
+                await this.JoinableTaskFactory.SwitchToMainThreadAsync(this.DisposalToken);
+
+                var monitorSelection = GetGlobalService(typeof(SVsShellMonitorSelection)) as IVsMonitorSelection;
                 IVsMultiItemSelect multiItemSelect = null;
                 var hierarchyPtr = IntPtr.Zero;
                 var selectionContainerPtr = IntPtr.Zero;
@@ -372,7 +442,7 @@ namespace Wijits.FastKoala
                 var hierarchy = Marshal.GetObjectForIUnknown(hierarchyPtr) as IVsHierarchy;
                 if (hierarchy == null) return null;
                 object objProj;
-                hierarchy.GetProperty(itemid, (int) __VSHPROPID.VSHPROPID_ExtObject, out objProj);
+                hierarchy.GetProperty(itemid, (int)__VSHPROPID.VSHPROPID_ExtObject, out objProj);
                 var projectItem = objProj as ProjectItem;
                 var project = objProj as Project;
 
@@ -380,7 +450,7 @@ namespace Wijits.FastKoala
             }
             catch (Exception e)
             {
-                Dte.GetLogger().LogWarn("Couldn't find selected project. " + e.Message);
+                (await Logger()).LogWarn("Couldn't find selected project. " + e.Message);
                 return null;
             }
         }
@@ -397,34 +467,38 @@ namespace Wijits.FastKoala
         {
             try
             {
+                await this.JoinableTaskFactory.SwitchToMainThreadAsync(this.DisposalToken);
+
                 // get the menu that fired the event
                 var menuCommand = sender as OleMenuCommand;
                 if (menuCommand == null) return;
 
-                IVsHierarchy hierarchy;
-                uint itemid;
-
-                var project = GetSelectedProject();
+                var project = await GetSelectedProjectAsync();
                 var projectFolder = project.GetDirectory();
                 if (project == null) return;
 
-                var isProject = (!IsSingleProjectItemSelection(out hierarchy, out itemid));
+                var singleProjectItemSelection = await IsSingleProjectItemSelectionAsync();
+                var isProject = (!singleProjectItemSelection.result);
+                
+                IVsHierarchy hierarchy = singleProjectItemSelection.hierarchy;
+                uint itemid = singleProjectItemSelection.itemid;
+
                 string containerDirectory;
                 if (!isProject)
                 {
                     // Get the file path
                     string itemFullPath = null;
-                    ((IVsProject) hierarchy).GetMkDocument(itemid, out itemFullPath);
+                    ((IVsProject)hierarchy).GetMkDocument(itemid, out itemFullPath);
                     containerDirectory = new DirectoryInfo(itemFullPath).FullName;
                 }
                 else containerDirectory = projectFolder;
 
                 BeginPackageBusy();
 
-                var psBuildScriptSupportInjector = await GetNewPowerShellBuildScriptSupportInjector();
-                if (await psBuildScriptSupportInjector.AddPowerShellScript(containerDirectory))
-                    LogSuccess();
-                else LogCancelOrAbort();
+                var psBuildScriptSupportInjector = await GetNewPowerShellBuildScriptSupportInjectorAsync();
+                if (await psBuildScriptSupportInjector.AddPowerShellScriptAsync(containerDirectory))
+                    await LogSuccessAsync();
+                else await LogCancelOrAbortAsync();
                 EndPackageBusy();
             }
             catch (Exception exception)
@@ -433,9 +507,9 @@ namespace Wijits.FastKoala
                 // what the heck just happened?
                 if (System.Diagnostics.Debugger.IsAttached) throw;
 #endif
-                LogAndPromptUnhandledError(exception);
+                await LogAndPromptUnhandledErrorAsync(exception);
             }
-            
+
         }
 
         private void BeginPackageBusy(bool withCursor = true)
@@ -467,7 +541,7 @@ namespace Wijits.FastKoala
         #endregion
 
 
-#region Add .targets file
+        #region Add .targets file
         private void AddMSBuildScriptMenuItem_BeforeQueryStatus(object sender, EventArgs e)
         {
             // anything goes?
@@ -477,18 +551,22 @@ namespace Wijits.FastKoala
         {
             try
             {
+                await this.JoinableTaskFactory.SwitchToMainThreadAsync(this.DisposalToken);
+
                 // get the menu that fired the event
                 var menuCommand = sender as OleMenuCommand;
                 if (menuCommand == null) return;
 
-                IVsHierarchy hierarchy;
-                uint itemid;
-
-                var project = GetSelectedProject();
+                var project = await GetSelectedProjectAsync();
                 var projectFolder = project.GetDirectory();
                 if (project == null) return;
 
-                var isProject = (!IsSingleProjectItemSelection(out hierarchy, out itemid));
+                var singleProjectItemSelection = await IsSingleProjectItemSelectionAsync();
+                var isProject = (!singleProjectItemSelection.result);
+
+                IVsHierarchy hierarchy = singleProjectItemSelection.hierarchy;
+                uint itemid = singleProjectItemSelection.itemid;
+
                 string containerDirectory;
                 if (!isProject)
                 {
@@ -501,10 +579,10 @@ namespace Wijits.FastKoala
 
                 BeginPackageBusy();
 
-                var targBuildScriptSupportInjector = await GetNewTargetsBuildScriptSupportInjector();
-                if (await targBuildScriptSupportInjector.AddProjectInclude(containerDirectory))
-                    LogSuccess();
-                else LogCancelOrAbort();
+                var targBuildScriptSupportInjector = await GetNewTargetsBuildScriptSupportInjectorAsync();
+                if (await targBuildScriptSupportInjector.AddProjectIncludeAsync(containerDirectory))
+                    await LogSuccessAsync();
+                else await LogCancelOrAbortAsync();
                 EndPackageBusy();
             }
             catch (Exception exception)
@@ -513,29 +591,31 @@ namespace Wijits.FastKoala
                 // what the heck just happened?
                 if (System.Diagnostics.Debugger.IsAttached) throw;
 #endif
-                LogAndPromptUnhandledError(exception);
+                await LogAndPromptUnhandledErrorAsync(exception);
             }
         }
 
-        private async Task<TargetsScriptInjector> GetNewTargetsBuildScriptSupportInjector()
+        private async Task<TargetsScriptInjector> GetNewTargetsBuildScriptSupportInjectorAsync()
         {
-            var logger = Dte.GetLogger();
-            var project = GetSelectedProject();
+            await this.JoinableTaskFactory.SwitchToMainThreadAsync(this.DisposalToken);
+
+            var logger = (await Logger());
+            var project = await GetSelectedProjectAsync();
             var result = new TargetsScriptInjector(project,
-                await VsFileSystemManipulatorFactory.GetFileSystemManipulatorForEnvironment(project),
+                await VsFileSystemManipulatorFactory.GetFileSystemManipulatorForEnvironmentAsync(project),
                 logger, GetNativeWindow());
             return result;
         }
-#endregion
+        #endregion
 
-#region Add NodeJS file
+        #region Add NodeJS file
         private void AddNodeJSScriptMenuItem_BeforeQueryStatus(object sender, EventArgs e)
         {
             var menuCommand = sender as OleMenuCommand;
             if (menuCommand == null) return;
 
             // anything goes?
-            
+
             //(temporarily hide)
             //menuCommand.Visible = false;
             //menuCommand.Enabled = false;
@@ -545,18 +625,22 @@ namespace Wijits.FastKoala
         {
             try
             {
+                await this.JoinableTaskFactory.SwitchToMainThreadAsync(this.DisposalToken);
+
                 // get the menu that fired the event
                 var menuCommand = sender as OleMenuCommand;
                 if (menuCommand == null) return;
 
-                IVsHierarchy hierarchy;
-                uint itemid;
-
-                var project = GetSelectedProject();
+                var project = await GetSelectedProjectAsync();
                 var projectFolder = project.GetDirectory();
                 if (project == null) return;
 
-                var isProject = (!IsSingleProjectItemSelection(out hierarchy, out itemid));
+                var singleProjectItemSelection = await IsSingleProjectItemSelectionAsync();
+                var isProject = (!singleProjectItemSelection.result);
+
+                IVsHierarchy hierarchy = singleProjectItemSelection.hierarchy;
+                uint itemid = singleProjectItemSelection.itemid;
+
                 string containerDirectory;
                 if (!isProject)
                 {
@@ -569,10 +653,10 @@ namespace Wijits.FastKoala
 
                 BeginPackageBusy();
 
-                var nodeJSBuildScriptSupportInjector = await GetNewNodeJSBuildScriptSupportInjector();
-                if (await nodeJSBuildScriptSupportInjector.AddNodeJSScript(containerDirectory))
-                    LogSuccess();
-                else LogCancelOrAbort();
+                var nodeJSBuildScriptSupportInjector = await GetNewNodeJSBuildScriptSupportInjectorAsync();
+                if (await nodeJSBuildScriptSupportInjector.AddNodeJSScriptAsync(containerDirectory))
+                    await LogSuccessAsync();
+                else await LogCancelOrAbortAsync();
 
                 EndPackageBusy();
             }
@@ -582,13 +666,13 @@ namespace Wijits.FastKoala
                 // what the heck just happened?
                 if (System.Diagnostics.Debugger.IsAttached) throw;
 #endif
-                LogAndPromptUnhandledError(exception);
+                await LogAndPromptUnhandledErrorAsync(exception);
             }
         }
 
-#endregion
+        #endregion
 
-#region EnableBuildTimeTransformations
+        #region EnableBuildTimeTransformations
 
         /// <summary>
         /// User should've right-clicked on a .config file; determine whether to show 
@@ -600,6 +684,8 @@ namespace Wijits.FastKoala
         {
             try
             {
+                await this.JoinableTaskFactory.SwitchToMainThreadAsync(this.DisposalToken);
+
                 // get the menu that fired the event
                 var menuCommand = sender as OleMenuCommand;
                 if (menuCommand == null) return;
@@ -608,13 +694,15 @@ namespace Wijits.FastKoala
                 menuCommand.Visible = false;
                 menuCommand.Enabled = false;
 
-                IVsHierarchy hierarchy = null;
-                uint itemid;
+                var singleProjectItemSelection = await IsSingleProjectItemSelectionAsync();
+                var isProject = (!singleProjectItemSelection.result);
 
-                if (!IsSingleProjectItemSelection(out hierarchy, out itemid)) return;
+                IVsHierarchy hierarchy = singleProjectItemSelection.hierarchy;
+                uint itemid = singleProjectItemSelection.itemid;
+
                 // Get the file path
                 string itemFullPath = null;
-                ((IVsProject) hierarchy).GetMkDocument(itemid, out itemFullPath);
+                ((IVsProject)hierarchy).GetMkDocument(itemid, out itemFullPath);
                 FileInfo transformFileInfo = null;
                 try
                 {
@@ -631,10 +719,10 @@ namespace Wijits.FastKoala
 
                 // if not leave the menu hidden
                 if (!isConfig) return;
-                var project = GetSelectedProject();
+                var project = await GetSelectedProjectAsync();
                 if (project == null) return;
 
-                var transformationsEnabler = await GetTransformationsEnabler(project, quick: true);
+                var transformationsEnabler = await GetTransformationsEnablerAsync(project, quick: true);
                 if (transformationsEnabler == null) return;
                 if (!transformationsEnabler.CanEnableBuildTimeTransformations)
                     return;
@@ -648,7 +736,7 @@ namespace Wijits.FastKoala
                 // what the heck just happened?
                 if (System.Diagnostics.Debugger.IsAttached) throw;
 #endif
-                LogUnhandledError(exception);
+                await LogUnhandledErrorAsync(exception);
             }
         }
 
@@ -668,10 +756,12 @@ namespace Wijits.FastKoala
                 menuCommand.Visible = false;
                 menuCommand.Enabled = false;
 
-                var project = GetSelectedProject();
+                await this.JoinableTaskFactory.SwitchToMainThreadAsync(this.DisposalToken);
+
+                var project = await GetSelectedProjectAsync();
                 if (project == null) return;
 
-                var transformationsEnabler = await GetTransformationsEnabler(project);
+                var transformationsEnabler = await GetTransformationsEnablerAsync(project);
                 if (transformationsEnabler == null) return;
                 if (!transformationsEnabler.CanEnableBuildTimeTransformations)
                     return;
@@ -686,7 +776,7 @@ namespace Wijits.FastKoala
                 // what the heck just happened?
                 if (System.Diagnostics.Debugger.IsAttached) throw;
 #endif
-                LogUnhandledError(exception);
+                await LogUnhandledErrorAsync(exception);
             }
         }
 
@@ -695,19 +785,19 @@ namespace Wijits.FastKoala
         /// </summary>
         private async void EnableBuildTimeTransformationsMenuItem_Invoke(object sender, EventArgs e)
         {
-            var project = GetSelectedProject();
+            var project = await GetSelectedProjectAsync();
             if (project == null) return;
-            var transformationsEnabler = await GetTransformationsEnabler(project);
+            var transformationsEnabler = await GetTransformationsEnablerAsync(project);
             if (transformationsEnabler == null) return;
 
             BeginPackageBusy();
 
             try
             {
-                if (await transformationsEnabler.EnableBuildTimeConfigTransformations())
-                    LogSuccess();
-                else LogCancelOrAbort();
-                
+                if (await transformationsEnabler.EnableBuildTimeConfigTransformationsAsync())
+                    await LogSuccessAsync();
+                else await LogCancelOrAbortAsync();
+
             }
             catch (Exception exception)
             {
@@ -715,20 +805,21 @@ namespace Wijits.FastKoala
                 // what the heck just happened?
                 if (System.Diagnostics.Debugger.IsAttached) throw;
 #endif
-                LogAndPromptUnhandledError(exception);
+                await LogAndPromptUnhandledErrorAsync(exception);
             }
 
             EndPackageBusy();
 
         }
 
-#endregion
+        #endregion
 
-#region AddMissingTransformations
+        #region AddMissingTransformations
 
         private async void AddMissingTransformationsMenuItem_BeforeQueryStatus(object sender, EventArgs e)
         {
-            try { 
+            try
+            {
                 // get the menu that fired the event
                 var menuCommand = sender as OleMenuCommand;
                 if (menuCommand == null) return;
@@ -737,10 +828,14 @@ namespace Wijits.FastKoala
                 menuCommand.Visible = false;
                 menuCommand.Enabled = false;
 
-                IVsHierarchy hierarchy = null;
-                var itemid = VSConstants.VSITEMID_NIL;
+                await this.JoinableTaskFactory.SwitchToMainThreadAsync(this.DisposalToken);
 
-                if (!IsSingleProjectItemSelection(out hierarchy, out itemid)) return;
+                var singleProjectItemSelection = await IsSingleProjectItemSelectionAsync();
+                var isProject = (!singleProjectItemSelection.result);
+
+                IVsHierarchy hierarchy = singleProjectItemSelection.hierarchy;
+                uint itemid = singleProjectItemSelection.itemid;
+
                 // Get the file path
                 string itemFullPath = null;
                 ((IVsProject)hierarchy).GetMkDocument(itemid, out itemFullPath);
@@ -761,9 +856,9 @@ namespace Wijits.FastKoala
                 // if not leave the menu hidden
                 if (!isConfig) return;
 
-                var project = GetSelectedProject();
+                var project = await GetSelectedProjectAsync();
                 if (project == null) return;
-                var transformationsEnabler = await GetTransformationsEnabler(project);
+                var transformationsEnabler = await GetTransformationsEnablerAsync(project);
                 if (transformationsEnabler == null) return;
                 if (transformationsEnabler.HasMissingTransforms)
                 {
@@ -778,7 +873,7 @@ namespace Wijits.FastKoala
                 // what the heck just happened?
                 if (System.Diagnostics.Debugger.IsAttached) throw;
 #endif
-                LogAndPromptUnhandledError(exception);
+                await LogAndPromptUnhandledErrorAsync(exception);
             }
         }
 
@@ -786,12 +881,12 @@ namespace Wijits.FastKoala
         {
             try
             {
-                var project = GetSelectedProject();
+                var project = await GetSelectedProjectAsync();
                 if (project == null) return;
-                var transformationsEnabler = await GetTransformationsEnabler(project);
+                var transformationsEnabler = await GetTransformationsEnablerAsync(project);
                 if (transformationsEnabler == null) return;
                 BeginPackageBusy();
-                await transformationsEnabler.AddMissingTransforms();
+                await transformationsEnabler.AddMissingTransformsAsync();
                 EndPackageBusy();
             }
             catch (Exception exception)
@@ -800,15 +895,22 @@ namespace Wijits.FastKoala
                 // what the heck just happened?
                 if (System.Diagnostics.Debugger.IsAttached) throw;
 #endif
-                LogAndPromptUnhandledError(exception);
+                await LogAndPromptUnhandledErrorAsync(exception);
             }
         }
 
-#endregion
+        #endregion
 
         // source: http://www.diaryofaninja.com/blog/2014/02/18/who-said-building-visual-studio-extensions-was-hard
-        private static bool IsSingleProjectItemSelection(out IVsHierarchy hierarchy, out uint itemid)
-        {
+        private async Task<(bool result, IVsHierarchy hierarchy, uint itemid)> IsSingleProjectItemSelectionAsync() {
+            await JoinableTaskFactory.SwitchToMainThreadAsync(DisposalToken);
+
+            IVsHierarchy hierarchy = null;
+            uint itemid = 0;
+            var falseResult = (result: false, hierarchy, itemid);
+
+            await JoinableTaskFactory.SwitchToMainThreadAsync(this.DisposalToken);
+
             hierarchy = null;
             itemid = VSConstants.VSITEMID_NIL;
             var hr = VSConstants.S_OK;
@@ -817,7 +919,7 @@ namespace Wijits.FastKoala
             var solution = GetGlobalService(typeof(SVsSolution)) as IVsSolution;
             if (monitorSelection == null || solution == null)
             {
-                return false;
+                return falseResult;
             }
 
             IVsMultiItemSelect multiItemSelect = null;
@@ -832,28 +934,28 @@ namespace Wijits.FastKoala
                 if (ErrorHandler.Failed(hr) || hierarchyPtr == IntPtr.Zero || itemid == VSConstants.VSITEMID_NIL)
                 {
                     // there is no selection
-                    return false;
+                    return falseResult;
                 }
 
                 // multiple items are selected
-                if (multiItemSelect != null) return false;
+                if (multiItemSelect != null) return falseResult;
 
                 // there is a hierarchy root node selected, thus it is not a single item inside a project
 
-                if (itemid == VSConstants.VSITEMID_ROOT) return false;
+                if (itemid == VSConstants.VSITEMID_ROOT) return falseResult;
 
                 hierarchy = Marshal.GetObjectForIUnknown(hierarchyPtr) as IVsHierarchy;
-                if (hierarchy == null) return false;
+                if (hierarchy == null) return falseResult;
 
                 var guidProjectID = Guid.Empty;
 
                 if (ErrorHandler.Failed(solution.GetGuidOfProject(hierarchy, out guidProjectID)))
                 {
-                    return false; // hierarchy is not a project inside the Solution if it does not have a ProjectID Guid
+                    return falseResult; // hierarchy is not a project inside the Solution if it does not have a ProjectID Guid
                 }
 
                 // if we got this far then there is a single project item selected
-                return true;
+                return (result: true, hierarchy, itemid);
             }
             finally
             {
@@ -869,17 +971,21 @@ namespace Wijits.FastKoala
             }
         }
 
-        private void LogUnhandledError(Exception exception)
+        private async Task LogUnhandledErrorAsync(Exception exception)
         {
-            var logger = Dte.GetLogger();
+            await this.JoinableTaskFactory.SwitchToMainThreadAsync(this.DisposalToken);
+
+            var logger = (await Logger());
             logger.LogError("Unhandled " + exception.GetType().Name + " (" + exception.GetType().FullName + "):\r\n"
                 + exception.StackTrace
                 + "\r\nPlease forward this log to " + FastKoalaMaintainerEmail);
         }
 
-        private void LogAndPromptUnhandledError(Exception exception)
+        private async Task LogAndPromptUnhandledErrorAsync(Exception exception)
         {
-            var logger = Dte.GetLogger();
+            await this.JoinableTaskFactory.SwitchToMainThreadAsync(this.DisposalToken);
+
+            var logger = (await Logger());
             logger.LogError("Unhandled " + exception.GetType().Name + " (" + exception.GetType().FullName + "):\r\n"
                 + exception.StackTrace
                 + "\r\nPlease forward this log to " + FastKoalaMaintainerEmail);
@@ -889,35 +995,44 @@ namespace Wijits.FastKoala
                 "Uh, something weird happened in Fast Koala, might you please do us all a favor and send the "
                 + "contents of the output window to " + FastKoalaMaintainerEmail + "?", "Fast Koala", MessageBoxButtons.YesNo,
                 MessageBoxIcon.Error);
-            logger.LogInfo("[Your response: '" + response.ToString() + "'] .. " 
+            logger.LogInfo("[Your response: '" + response.ToString() + "'] .. "
                 + (response == DialogResult.No ? "*snif*" : "Thanks"));
         }
 
-        private void LogCancelOrAbort()
+        private async Task LogCancelOrAbortAsync()
         {
-            VsEnvironment.Dte.GetLogger().LogWarn("Action was canceled or aborted.");
+            await this.JoinableTaskFactory.SwitchToMainThreadAsync(this.DisposalToken);
+            (await Logger()).LogWarn("Action was canceled or aborted.");
         }
 
-        private void LogSuccess()
+        private async Task<ILogger> Logger()
         {
-            VsEnvironment.Dte.GetLogger().LogInfo("Done.");
+            return await VsEnvironment.Dte.GetLoggerAsync();
         }
 
-        private async Task<PSBuildScriptSupportInjector> GetNewPowerShellBuildScriptSupportInjector()
+        private async Task LogSuccessAsync()
         {
-            var logger = Dte.GetLogger();
-            var project = GetSelectedProject();
-            var result = new PSBuildScriptSupportInjector(project, 
-                await VsFileSystemManipulatorFactory.GetFileSystemManipulatorForEnvironment(project),
+            await this.JoinableTaskFactory.SwitchToMainThreadAsync(this.DisposalToken);
+            (await Logger()).LogInfo("Done.");
+        }
+
+        private async Task<PSBuildScriptSupportInjector> GetNewPowerShellBuildScriptSupportInjectorAsync()
+        {
+            await this.JoinableTaskFactory.SwitchToMainThreadAsync(this.DisposalToken);
+
+            var logger = (await Logger());
+            var project = await GetSelectedProjectAsync();
+            var result = new PSBuildScriptSupportInjector(project,
+                await VsFileSystemManipulatorFactory.GetFileSystemManipulatorForEnvironmentAsync(project),
                 logger, GetNativeWindow());
             return result;
         }
-        private async Task<NodeJSBuildScriptSupportInjector> GetNewNodeJSBuildScriptSupportInjector()
+        private async Task<NodeJSBuildScriptSupportInjector> GetNewNodeJSBuildScriptSupportInjectorAsync()
         {
-            var logger = Dte.GetLogger();
-            var project = GetSelectedProject();
+            var logger = (await Logger());
+            var project = await GetSelectedProjectAsync();
             var result = new NodeJSBuildScriptSupportInjector(project,
-                await VsFileSystemManipulatorFactory.GetFileSystemManipulatorForEnvironment(project),
+                await VsFileSystemManipulatorFactory.GetFileSystemManipulatorForEnvironmentAsync(project),
                 logger, GetNativeWindow());
             return result;
         }

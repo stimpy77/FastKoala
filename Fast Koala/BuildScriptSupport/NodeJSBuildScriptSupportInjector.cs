@@ -8,10 +8,12 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
 using EnvDTE;
+using Microsoft.VisualStudio.Shell;
 using Wijits.FastKoala.BuildScriptSupport;
 using Wijits.FastKoala.Logging;
 using Wijits.FastKoala.SourceControl;
 using Wijits.FastKoala.Utilities;
+using Task = System.Threading.Tasks.Task;
 // ReSharper disable LocalizableElement
 // ReSharper disable SimplifyLinqExpression
 
@@ -29,6 +31,7 @@ namespace Wijits.FastKoala.BuildScriptInjections
 
         public NodeJSBuildScriptSupportInjector(EnvDTE.Project project, ISccBasicFileSystem io, ILogger logger, IWin32Window ownerWindow)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             _dte = project.DTE;
             _projectUniqueName = project.UniqueName;
             _io = io;
@@ -38,10 +41,11 @@ namespace Wijits.FastKoala.BuildScriptInjections
             _ownerWindow = ownerWindow;
         }
         
-        public async Task<bool> AddNodeJSScript(string containerDirectory, 
+        public async Task<bool> AddNodeJSScriptAsync(string containerDirectory, 
             string scriptFile = null, bool? invokeAfter = null)
         {
-            if (!(await EnsureProjectHasNodeJSEnabled())) return false;
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            if (!(await EnsureProjectHasNodeJSEnabledAsync())) return false;
             _logger.LogInfo("Begin adding NodeJS script");
             invokeAfter = invokeAfter ?? true;
             if (string.IsNullOrWhiteSpace(containerDirectory))
@@ -86,23 +90,25 @@ namespace Wijits.FastKoala.BuildScriptInjections
             addedItem.Properties.Item("ItemType").Value
                 = invokeAfter.Value ? "InvokeAfter" : "InvokeBefore";
             _logger.LogInfo("NodeJS script added to project: " + scriptFileName);
-            await Task.Run(() =>
+            await Task.Run(async () =>
             {
                 System.Threading.Thread.Sleep(250);
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 _dte.ExecuteCommand("File.OpenFile", "\"" + scriptFile + "\"");
             });
             return true;
         }
 
-        private async Task<bool> EnsureProjectHasNodeJSEnabled()
+        private async Task<bool> EnsureProjectHasNodeJSEnabledAsync()
         {
             if (!_projectProperties.NodeJSBuildEnabled)
-                return await InjectNodeJSScriptSupport() != null;
+                return await InjectNodeJSScriptSupportAsync() != null;
             return true;
         }
 
-        private async Task<EnvDTE.Project> InjectNodeJSScriptSupport()
+        private async Task<EnvDTE.Project> InjectNodeJSScriptSupportAsync()
         {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             _logger.LogInfo("Injecting NodeJS rich execution support to project");
             if (!Project.Saved || !Project.DTE.Solution.Saved ||
                 string.IsNullOrEmpty(Project.FullName) || string.IsNullOrEmpty(Project.DTE.Solution.FullName))
@@ -110,7 +116,7 @@ namespace Wijits.FastKoala.BuildScriptInjections
                 var saveDialogResult = MessageBox.Show(_ownerWindow, "Save pending changes to solution?",
                     "Save pending changes", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (saveDialogResult == DialogResult.OK || saveDialogResult == DialogResult.Yes)
-                    _dte.SaveAll();
+                    await _dte.SaveAllAsync();
             }
             if (!Project.Saved || !Project.DTE.Solution.Saved || 
                 string.IsNullOrEmpty(Project.FullName) || string.IsNullOrEmpty(Project.DTE.Solution.FullName))
@@ -118,7 +124,7 @@ namespace Wijits.FastKoala.BuildScriptInjections
                 var saveDialogResult = MessageBox.Show(_ownerWindow,
                     "Pending changes need to be saved. Please save the project and solution before adding NodeJS build scripts, then retry.",
                     "Aborted", MessageBoxButtons.OKCancel, MessageBoxIcon.Asterisk);
-                if (saveDialogResult != DialogResult.Cancel) _dte.SaveAll();
+                if (saveDialogResult != DialogResult.Cancel) await _dte.SaveAllAsync();
                 _logger.LogInfo("Project or solution is not saved. Aborting.");
                 return null;
             }
@@ -163,9 +169,9 @@ namespace Wijits.FastKoala.BuildScriptInjections
 
             _projectProperties.NodeJSBuildEnabled = true;
             var projectRootPath = Project.FullName;
-            Project = await Project.SaveProjectRoot();
+            Project = await Project.SaveProjectRootAsync();
             
-            VsEnvironment.Dte.UnloadProject(Project);
+            await VsEnvironment.Dte.UnloadProjectAsync(Project);
 
             var projXml = File.ReadAllText(projectRootPath);
             // ReSharper disable StringIndexOfIsCultureSpecific.1
@@ -292,8 +298,8 @@ namespace Wijits.FastKoala.BuildScriptInjections
             if (await _io.ItemIsUnderSourceControl(projectRootPath)) await _io.Checkout(projectRootPath);
             File.WriteAllText(projectRootPath, projXml);
             _logger.LogInfo("Project file is now updated.");
-            VsEnvironment.Dte.ReloadJustUnloadedProject();
-            Project = VsEnvironment.Dte.GetProjectByFullName(projectRootPath);
+            await VsEnvironment.Dte.ReloadProjectAsync();
+            Project = await VsEnvironment.Dte.GetProjectByFullNameAsync(projectRootPath);
             return Project;
         }
 
@@ -301,11 +307,19 @@ namespace Wijits.FastKoala.BuildScriptInjections
         {
             get
             {
-                return _dte.GetProjectByUniqueName(_projectUniqueName)
-                       ?? _dte.GetProjectByName(_projectName);
+                var t = _dte.GetProjectByUniqueNameAsync(_projectUniqueName);
+                t.ConfigureAwait(true);
+                var result = t.Result;
+                if (result == null) {
+                    t = _dte.GetProjectByNameAsync(_projectName);
+                    t.ConfigureAwait(true);
+                    result = t.Result;
+                }
+                return result;
             }
             set
             {
+                ThreadHelper.ThrowIfNotOnUIThread();
                 if (value == null) return;
                 _projectName = value.Name;
                 _projectUniqueName = value.UniqueName;

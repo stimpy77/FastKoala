@@ -7,9 +7,11 @@ using System.Windows.Forms;
 using System.Xml;
 using EnvDTE;
 using Microsoft.Build.Construction;
+using Microsoft.VisualStudio.Shell;
 using Wijits.FastKoala.Logging;
 using Wijits.FastKoala.SourceControl;
 using Wijits.FastKoala.Utilities;
+using Task = System.Threading.Tasks.Task;
 
 namespace Wijits.FastKoala.Transformations
 {
@@ -25,6 +27,7 @@ namespace Wijits.FastKoala.Transformations
         public BuildTimeTransformationsEnabler(Project project, ILogger logger, ISccBasicFileSystem io,
             IWin32Window ownerWindow)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             _dte = project.DTE;
             Project = project;
             ProjectProperties = new ProjectProperties(project);
@@ -34,22 +37,24 @@ namespace Wijits.FastKoala.Transformations
         }
 
         /// <remarks>Menu item entry point</remarks>
-        public async Task<bool> EnableBuildTimeConfigTransformations()
+        public async Task<bool> EnableBuildTimeConfigTransformationsAsync()
         {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
             if (!Project.Saved || !Project.DTE.Solution.Saved ||
                 string.IsNullOrEmpty(Project.FullName) || string.IsNullOrEmpty(Project.DTE.Solution.FullName))
             {
                 var saveDialogResult = MessageBox.Show(_ownerWindow, "Save pending changes to solution?",
                     "Save pending changes", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (saveDialogResult == DialogResult.OK || saveDialogResult == DialogResult.Yes)
-                    _dte.SaveAll();
+                    await _dte.SaveAllAsync();
             }
             if (!Project.Saved || string.IsNullOrEmpty(Project.FullName))
             {
                 var saveDialogResult = MessageBox.Show(_ownerWindow,
                     "Pending changes need to be saved. Please save the project and solution before enabling build-time transformations, then retry.",
                     "Aborted", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
-                if (saveDialogResult != DialogResult.Cancel) _dte.SaveAll();
+                if (saveDialogResult != DialogResult.Cancel) await _dte.SaveAllAsync();
                 return false;
             }
 
@@ -93,11 +98,11 @@ namespace Wijits.FastKoala.Transformations
             // 4. if inline transformations, move and/or create web.config and related transforms to config folder
             // 4b. update project XML for moved files
             // 4c. inject warning xml to base
-            if (inlineTransformations) prepresult = await PrepEnableInlineBuildTimeConfigTransformations();
+            if (inlineTransformations) prepresult = await PrepEnableInlineBuildTimeConfigTransformationsAsync();
 
             // create missing web.config and related transforms to config folder
             // also make sure that the project has the proper task added (as with the case of app.config non-clickonce)
-            else prepresult = await PrepEnableBuildTimeConfigTransformationsForBin();
+            else prepresult = await PrepEnableBuildTimeConfigTransformationsForBinAsync();
 
             if (prepresult == false) return false;
             ProjectProperties.BuildTimeAppCfgTransformsEnabled = true;
@@ -122,18 +127,18 @@ namespace Wijits.FastKoala.Transformations
 
 
             // 8. save changes and reload project
-            await Project.SaveProjectRoot();
+            await Project.SaveProjectRootAsync();
 
             return true;
         }
 
         /// <remarks>Menu item entry point</remarks>
-        public async Task AddMissingTransforms()
+        public async Task AddMissingTransformsAsync()
         {
             var baseConfigFile = GetBaseConfigPath();
             if (baseConfigFile == null) return;
-            await AddMissingTransforms(baseConfigFile);
-            await Project.SaveProjectRoot();
+            await AddMissingTransformsAsync(baseConfigFile);
+            await Project.SaveProjectRootAsync();
         }
 
         private string DetermineAppCfgType()
@@ -227,8 +232,9 @@ namespace Wijits.FastKoala.Transformations
             return dialogResult != DialogResult.Cancel ? cfgprompt.ConfigDir : null;
         }
 
-        private async Task<bool> PrepEnableBuildTimeConfigTransformationsForBin()
+        private async Task<bool> PrepEnableBuildTimeConfigTransformationsForBinAsync()
         {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             // create missing web.config and related transforms to config folder
             // also make sure that the project has the proper usingtask added (as with the case of app.config non-clickonce)
 
@@ -246,7 +252,7 @@ namespace Wijits.FastKoala.Transformations
                 }
                 AddItemToProject("None", baseConfigFileRelPath);
             }
-            await AddMissingTransforms(baseConfigFileFullPath);
+            await AddMissingTransformsAsync(baseConfigFileFullPath);
 
             return true;
         }
@@ -266,8 +272,9 @@ namespace Wijits.FastKoala.Transformations
             return baseConfigPath;
         }
 
-        private async Task AddMissingTransforms(string baseConfigFile)
+        private async Task AddMissingTransformsAsync(string baseConfigFile)
         {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             var appcfgtype = ProjectProperties.AppCfgType;
             var baseFileInfo = new FileInfo(baseConfigFile);
             var cfgfilename = baseFileInfo.Name;
@@ -302,8 +309,9 @@ namespace Wijits.FastKoala.Transformations
             }
         }
 
-        private async Task<bool> PrepEnableInlineBuildTimeConfigTransformations()
+        private async Task<bool> PrepEnableInlineBuildTimeConfigTransformationsAsync()
         {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             // 3. if inline transformations, determine config folder
             if (string.IsNullOrEmpty(ProjectProperties.ConfigDir))
             {
@@ -363,6 +371,7 @@ namespace Wijits.FastKoala.Transformations
                 var parentDir = Directory.GetParent(newBaseConfigFullPath).FullName;
                 if (!Directory.Exists(parentDir)) Directory.CreateDirectory(parentDir);
                 await _io.Move(cfgfullpath, newBaseConfigFullPath);
+                if (!File.Exists(newBaseConfigFullPath)) File.Move(cfgfullpath, newBaseConfigFullPath);
 
                 // and update the proejct manifest reference to the file
                 var configItem = Project.GetProjectRoot().Items
@@ -403,6 +412,7 @@ namespace Wijits.FastKoala.Transformations
                         {
                             _logger.LogInfo("Moving " + xfrmname + " to " + xfrmpath);
                             await _io.Move(oldxfrmpath, xfrmFullPath);
+                            if (!File.Exists(xfrmFullPath)) File.Move(oldxfrmpath, xfrmFullPath);
                         }
                     }
                     if (replaceXfrm || (!File.Exists(xfrmpath) && !File.Exists(oldxfrmpath)))
@@ -434,7 +444,7 @@ namespace Wijits.FastKoala.Transformations
 
             // 4c. inject warning xml to base
             if (File.Exists(baseConfigFullPath))
-                await InjectBaseConfigWarningComment(baseConfigFullPath);
+                await InjectBaseConfigWarningCommentAsync(baseConfigFullPath);
             else _logger.LogWarn("Unexpected missing base file: " + baseConfigFullPath);
 
             // add <AppConfigBaseFileFullPath>
@@ -477,7 +487,7 @@ namespace Wijits.FastKoala.Transformations
             }
         }
 
-        private async Task InjectBaseConfigWarningComment(string baseConfigFullPath)
+        private async Task InjectBaseConfigWarningCommentAsync(string baseConfigFullPath)
         {
             var xml = new XmlDocument();
             xml.Load(baseConfigFullPath);
@@ -510,11 +520,20 @@ namespace Wijits.FastKoala.Transformations
         {
             get
             {
-                return _dte.GetProjectByUniqueName(_projectUniqueName)
-                       ?? _dte.GetProjectByName(_projectName);
+                var t = _dte.GetProjectByUniqueNameAsync(_projectUniqueName);
+                t.ConfigureAwait(true);
+                var result = t.Result;
+                if (result == null)
+                {
+                    t = _dte.GetProjectByNameAsync(_projectName);
+                    t.ConfigureAwait(true);
+                    result = t.Result;
+                }
+                return result;
             }
             set
             {
+                ThreadHelper.ThrowIfNotOnUIThread();
                 if (value == null) return;
                 _projectName = value.Name;
                 _projectUniqueName = value.UniqueName;
@@ -525,6 +544,7 @@ namespace Wijits.FastKoala.Transformations
         {
             get
             {
+                ThreadHelper.ThrowIfNotOnUIThread();
                 if (Project == null) return false;
                 // ASP.NET 5 projects (not supported) seem to be using the .xproj file extension
                 if (Project.FullName.ToLower().EndsWith(".xproj")) return false;
@@ -534,19 +554,25 @@ namespace Wijits.FastKoala.Transformations
                        !string.IsNullOrWhiteSpace(Project.FullName) &&
                        !Project.FullName.Contains("://") &&
                        File.Exists(Project.FullName);
-                return defaultResult ||
-                       (HasBuildTimeTransformationsEnabled &&
-                        (Project.GetProjectTypeGuids()
+
+                if (defaultResult) return defaultResult;
+                if (!HasBuildTimeTransformationsEnabled) return false;
+
+                var ptypeTask = Project.GetProjectTypeGuidsAsync();
+                ptypeTask.ConfigureAwait(true);
+                var pttype = ptypeTask.Result;
+                var presult = pttype
                             .Split(';')
                             .Select(pt => new Guid(pt))
                             .Any(
                                 pt =>
                                     new[]
                                     {
-                                        ProjectTypes.WindowsCSharp, 
+                                        ProjectTypes.WindowsCSharp,
                                         ProjectTypes.WindowsVB,
                                         ProjectTypes.WindowsPresentationFoundation
-                                    }.Contains(pt)))) &&
+                                    }.Contains(pt));
+                return (presult) &&
                         ProjectLooksLikeClickOnce &&
                         ProjectProperties.InlineAppCfgTransforms != true;
             }
@@ -556,6 +582,7 @@ namespace Wijits.FastKoala.Transformations
         {
             get
             {
+                ThreadHelper.ThrowIfNotOnUIThread();
                 if (Project.IsType(ProjectTypes.WebSite) ||
                     string.IsNullOrWhiteSpace(Project.FullName) ||
                     Project.FullName.Contains("://") ||
@@ -573,6 +600,7 @@ namespace Wijits.FastKoala.Transformations
         {
             get
             {
+                ThreadHelper.ThrowIfNotOnUIThread();
                 var projectKind = !string.IsNullOrEmpty(Project.Kind) ? Guid.Parse(Project.Kind) : (Guid?) null;
                 var webProjectTypes = new[]
                 {
@@ -583,7 +611,10 @@ namespace Wijits.FastKoala.Transformations
                     ProjectTypes.AspNetMvc40,
                     ProjectTypes.WebApplication
                 };
-                var projectTypes = Project.GetProjectTypeGuids().Split(';').Select(Guid.Parse);
+                var ptypesTask = Project.GetProjectTypeGuidsAsync();
+                ptypesTask.ConfigureAwait(true);
+                var ptypes = ptypesTask.Result;
+                var projectTypes = ptypes.Split(';').Select(Guid.Parse);
                 return projectKind.HasValue && (webProjectTypes.Contains(projectKind.Value) ||
                                                 projectTypes.Any(t => webProjectTypes.Contains(t)));
             }
@@ -598,6 +629,7 @@ namespace Wijits.FastKoala.Transformations
         {
             get
             {
+                ThreadHelper.ThrowIfNotOnUIThread();
                 if (!HasBuildTimeTransformationsEnabled) return false;
                 var baseConfigPath = GetBaseConfigPath();
                 var baseConfigInfo = new FileInfo(baseConfigPath);

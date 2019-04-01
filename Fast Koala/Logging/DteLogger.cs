@@ -22,6 +22,7 @@ namespace Wijits.FastKoala.Logging
         {
             get
             {
+                Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
                 var window = _dte.Windows.Item(Constants.vsWindowKindOutput);
                 var outputWindow = (OutputWindow)window.Object;
                 var panes = outputWindow.OutputWindowPanes;
@@ -47,6 +48,7 @@ namespace Wijits.FastKoala.Logging
 
         private void WriteLine(string message)
         {
+            Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
             OutputWindowPane.Activate();
             OutputWindowPane.OutputString(_outputPrefix + message + "\r\n");
         }

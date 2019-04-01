@@ -17,22 +17,23 @@ namespace Wijits.FastKoala.SourceControl
     {
         // FYI: VS SDK API for source control detection and support is really, really horrible.
 
-        public static async Task<ISccBasicFileSystem> GetFileSystemManipulatorForEnvironment(Project project)
+        public static async Task<ISccBasicFileSystem> GetFileSystemManipulatorForEnvironmentAsync(Project project)
         {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             var dte = project.DTE;
             //if (!project.IsSourceControlled() && !dte.Solution.IsSourceControlled())
             //{
             //    return new NonSccBasicFileSystem();
             //}
-            var detectedSccSystem = await DetectSccSystem(project);
+            var detectedSccSystem = await DetectSccSystemAsync(project);
             ISccBasicFileSystem result;
             switch (detectedSccSystem)
             {
                 case "tfs":
-                    result = new TfsExeWrapper(project.GetDirectory(), dte.GetLogger());
+                    result = new TfsExeWrapper(project.GetDirectory(), await dte.GetLoggerAsync());
                     break;
                 case "git":
-                    result = new GitExeWrapper(project.GetDirectory(), dte.GetLogger());
+                    result = new GitExeWrapper(project.GetDirectory(), await dte.GetLoggerAsync());
                     break;
                 case "hg": // not yet implemented
                     //result = null;
@@ -53,11 +54,12 @@ namespace Wijits.FastKoala.SourceControl
             return result;
         }
 
-        private static async Task<string> DetectSccSystem(Project project)
+        private static async Task<string> DetectSccSystemAsync(Project project)
         {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             // Did I mention? VS SDK API for source control detection and support is really, really horrible.
 
-            var tfs = new TfsExeWrapper(project.GetDirectory(), VsEnvironment.Dte.GetLogger());
+            var tfs = new TfsExeWrapper(project.GetDirectory(), await VsEnvironment.Dte.GetLoggerAsync());
             var projectFilePath = project.FullName;
             if (string.IsNullOrWhiteSpace(projectFilePath)) return null;
             if (!projectFilePath.Contains("://") && File.Exists(projectFilePath))
@@ -90,10 +92,10 @@ namespace Wijits.FastKoala.SourceControl
             }
             var sccdir = project.DTE.Solution.GetDirectory();
             if (string.IsNullOrEmpty(sccdir)) sccdir = project.GetDirectory();
-            return await DetectSccSystem(sccdir);
+            return DetectSccSystem(sccdir);
         }
 
-        private static async Task<string> DetectSccSystem(string directory)
+        private static string DetectSccSystem(string directory)
         {
 
             var gitDirExists = Directory.Exists(Path.Combine(directory, ".git"));
