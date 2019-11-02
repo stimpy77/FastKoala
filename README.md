@@ -1,5 +1,5 @@
 # Fast Koala
-Enables build-time config transforms for various project types including ASP.NET 4.x-or-below web apps (but not web sites). It also supports adding an unlimited number of PowerShell scripts with the MSBuild project properties fully exposed, executing either before build or after build, as well as add MSBuild scripts (Imports directives to custom .targets files) to a project.
+Enables build-time config transforms for various project types including ASP.NET 4.x-or-below web apps (but not web sites). ~~It also supports adding an unlimited number of PowerShell scripts with the MSBuild project properties fully exposed, executing either before build or after build, as well as add MSBuild scripts (Imports directives to custom .targets files) to a project.~~ *Custom build scripts are unfortunately not supported in this early VS 2019 build at this time due to major changes that have been made to MSBuild itself.*
 
 You **do not** need Fast Koala to be installed once its changes have been applied to a project. A TFS build server would need no knowledge of Fast Koala for any of Fast Koala's changes to be effective.
 
