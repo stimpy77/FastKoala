@@ -25,6 +25,8 @@ of Fast Koala are therefore in flux.
 
 (Click to watch)
 
+*Note that the Build Scripts feature demonstrated in the video is not supported at this time in VS2019.*
+
 [![Fast Koala v1.1.22](https://j.gifs.com/vW81x4.gif)](https://youtu.be/mHC6_zRbO-Y)
 
 ### "Build-time" means F5
