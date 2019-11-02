@@ -15,7 +15,7 @@ using EnvDTE;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using Wijits.FastKoala.BuildScriptInjections;
+//using Wijits.FastKoala.BuildScriptInjections;
 using Wijits.FastKoala.Events;
 using Wijits.FastKoala.Logging;
 using Wijits.FastKoala.SourceControl;
@@ -495,10 +495,10 @@ namespace Wijits.FastKoala
 
                 BeginPackageBusy();
 
-                var psBuildScriptSupportInjector = await GetNewPowerShellBuildScriptSupportInjectorAsync();
-                if (await psBuildScriptSupportInjector.AddPowerShellScriptAsync(containerDirectory))
-                    await LogSuccessAsync();
-                else await LogCancelOrAbortAsync();
+                //var psBuildScriptSupportInjector = await GetNewPowerShellBuildScriptSupportInjectorAsync();
+                //if (await psBuildScriptSupportInjector.AddPowerShellScriptAsync(containerDirectory))
+                //    await LogSuccessAsync();
+                //else await LogCancelOrAbortAsync();
                 EndPackageBusy();
             }
             catch (Exception exception)
@@ -579,10 +579,10 @@ namespace Wijits.FastKoala
 
                 BeginPackageBusy();
 
-                var targBuildScriptSupportInjector = await GetNewTargetsBuildScriptSupportInjectorAsync();
-                if (await targBuildScriptSupportInjector.AddProjectIncludeAsync(containerDirectory))
-                    await LogSuccessAsync();
-                else await LogCancelOrAbortAsync();
+                //var targBuildScriptSupportInjector = await GetNewTargetsBuildScriptSupportInjectorAsync();
+                //if (await targBuildScriptSupportInjector.AddProjectIncludeAsync(containerDirectory))
+                //    await LogSuccessAsync();
+                //else await LogCancelOrAbortAsync();
                 EndPackageBusy();
             }
             catch (Exception exception)
@@ -595,17 +595,17 @@ namespace Wijits.FastKoala
             }
         }
 
-        private async Task<TargetsScriptInjector> GetNewTargetsBuildScriptSupportInjectorAsync()
-        {
-            await this.JoinableTaskFactory.SwitchToMainThreadAsync(this.DisposalToken);
+        //private async Task<TargetsScriptInjector> GetNewTargetsBuildScriptSupportInjectorAsync()
+        //{
+        //    await this.JoinableTaskFactory.SwitchToMainThreadAsync(this.DisposalToken);
 
-            var logger = (await Logger());
-            var project = await GetSelectedProjectAsync();
-            var result = new TargetsScriptInjector(project,
-                await VsFileSystemManipulatorFactory.GetFileSystemManipulatorForEnvironmentAsync(project),
-                logger, GetNativeWindow());
-            return result;
-        }
+        //    var logger = (await Logger());
+        //    var project = await GetSelectedProjectAsync();
+        //    var result = new TargetsScriptInjector(project,
+        //        await VsFileSystemManipulatorFactory.GetFileSystemManipulatorForEnvironmentAsync(project),
+        //        logger, GetNativeWindow());
+        //    return result;
+        //}
         #endregion
 
         #region Add NodeJS file
@@ -653,10 +653,10 @@ namespace Wijits.FastKoala
 
                 BeginPackageBusy();
 
-                var nodeJSBuildScriptSupportInjector = await GetNewNodeJSBuildScriptSupportInjectorAsync();
-                if (await nodeJSBuildScriptSupportInjector.AddNodeJSScriptAsync(containerDirectory))
-                    await LogSuccessAsync();
-                else await LogCancelOrAbortAsync();
+                //var nodeJSBuildScriptSupportInjector = await GetNewNodeJSBuildScriptSupportInjectorAsync();
+                //if (await nodeJSBuildScriptSupportInjector.AddNodeJSScriptAsync(containerDirectory))
+                //    await LogSuccessAsync();
+                //else await LogCancelOrAbortAsync();
 
                 EndPackageBusy();
             }
@@ -1016,25 +1016,25 @@ namespace Wijits.FastKoala
             (await Logger()).LogInfo("Done.");
         }
 
-        private async Task<PSBuildScriptSupportInjector> GetNewPowerShellBuildScriptSupportInjectorAsync()
-        {
-            await this.JoinableTaskFactory.SwitchToMainThreadAsync(this.DisposalToken);
+        //private async Task<PSBuildScriptSupportInjector> GetNewPowerShellBuildScriptSupportInjectorAsync()
+        //{
+        //    await this.JoinableTaskFactory.SwitchToMainThreadAsync(this.DisposalToken);
 
-            var logger = (await Logger());
-            var project = await GetSelectedProjectAsync();
-            var result = new PSBuildScriptSupportInjector(project,
-                await VsFileSystemManipulatorFactory.GetFileSystemManipulatorForEnvironmentAsync(project),
-                logger, GetNativeWindow());
-            return result;
-        }
-        private async Task<NodeJSBuildScriptSupportInjector> GetNewNodeJSBuildScriptSupportInjectorAsync()
-        {
-            var logger = (await Logger());
-            var project = await GetSelectedProjectAsync();
-            var result = new NodeJSBuildScriptSupportInjector(project,
-                await VsFileSystemManipulatorFactory.GetFileSystemManipulatorForEnvironmentAsync(project),
-                logger, GetNativeWindow());
-            return result;
-        }
+        //    var logger = (await Logger());
+        //    var project = await GetSelectedProjectAsync();
+        //    var result = new PSBuildScriptSupportInjector(project,
+        //        await VsFileSystemManipulatorFactory.GetFileSystemManipulatorForEnvironmentAsync(project),
+        //        logger, GetNativeWindow());
+        //    return result;
+        //}
+        //private async Task<NodeJSBuildScriptSupportInjector> GetNewNodeJSBuildScriptSupportInjectorAsync()
+        //{
+        //    var logger = (await Logger());
+        //    var project = await GetSelectedProjectAsync();
+        //    var result = new NodeJSBuildScriptSupportInjector(project,
+        //        await VsFileSystemManipulatorFactory.GetFileSystemManipulatorForEnvironmentAsync(project),
+        //        logger, GetNativeWindow());
+        //    return result;
+        //}
     }
 }

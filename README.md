@@ -5,6 +5,22 @@ You **do not** need Fast Koala to be installed once its changes have been applie
 
 [![Contact me on Codementor](https://cdn.codementor.io/badges/contact_me_github.svg)](https://www.codementor.io/solutionsjon?utm_source=github&utm_medium=button&utm_term=solutionsjon&utm_campaign=github)
 
+## Beta for Visual Studio 2019
+
+Visual Studio 2019 dramatically changed its MSBuild / .csproj / .vbproj / etc 
+specifications and behaviors, as such a number of features have been temporarily
+removed, namely the Build Scripts support (adding MSBuild variables aware 
+PowerShell script and NodeJS script or custom .targets file via context menu).
+
+These can come back when the RoslynCodeTaskFactory for Inline Tasks is sorted out.
+
+Meanwhile there are other ongoing concerns such as how newer versions of .csproj 
+project files for web projects may automatically generate the web.config, resulting
+in a build-time error from Fast Koala's added build target task. Ultimately,
+Fast Koala as a solution is somewhat moot anyway since Microsoft can do a runtime
+settings merge from appsettings.json + appsettings.environment.json. The objectives
+of Fast Koala are therefore in flux.
+
 ### Video Demo
 
 (Click to watch)
@@ -82,11 +98,11 @@ The `InlineAppCfgTransforms` and `AppConfigBaseFileFullPath` MSBuild properties 
 
 You will need to either evaluate the MSBuild project property or load the project's XML and parse these properties out yourself.
     
-### Adding Build Scripts
+### ~~Adding Build Scripts~~
 
-Fast Koala also supports adding build scripts, such as PowerShell scripts, NodeJS scripts, and project extensions (.targets files). To use this feature, right-click on the project node or a project folder in Solution Explorer and choose Add -> Build Script -> PowerShell Script (.ps1) or whichever script type you need. Scripts added with Fast Koala have the added advantage of having the MSBuild project properties exposed to the script runtime engine.
+~~Fast Koala also supports adding build scripts, such as PowerShell scripts, NodeJS scripts, and project extensions (.targets files). To use this feature, right-click on the project node or a project folder in Solution Explorer and choose Add -> Build Script -> PowerShell Script (.ps1) or whichever script type you need. Scripts added with Fast Koala have the added advantage of having the MSBuild project properties exposed to the script runtime engine.~~
 
-Additional script types are planned in the future.
+~~Additional script types are planned in the future.~~
 
 ### Development notes
 

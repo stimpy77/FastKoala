@@ -62,15 +62,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="BuildScriptSupport\AddBuildScriptNamePrompt.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="BuildScriptSupport\AddBuildScriptNamePrompt.Designer.cs">
-      <DependentUpon>AddBuildScriptNamePrompt.cs</DependentUpon>
-    </Compile>
-    <Compile Include="BuildScriptSupport\NodeJSBuildScriptSupportInjector.cs" />
-    <Compile Include="BuildScriptSupport\PSBuildScriptSupportInjector.cs" />
-    <Compile Include="BuildScriptSupport\TargetsScriptInjector.cs" />
     <Compile Include="Events\AfterLoadProjectEventArgs.cs" />
     <Compile Include="Events\AfterOpenProjectEventArgs.cs" />
     <Compile Include="Events\AfterOpenSolutionEventArgs.cs" />
@@ -156,11 +147,6 @@
       <Version>7.10.6071</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="16.0.2264" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="BuildScriptSupport\AddBuildScriptNamePrompt.resx">
-      <DependentUpon>AddBuildScriptNamePrompt.cs</DependentUpon>
-    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\09.ico" />
