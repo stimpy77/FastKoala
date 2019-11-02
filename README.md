@@ -55,9 +55,13 @@ This tool also supports enabling build-time transformations for class library pr
 
 ### Where to get it
 You can download the official current release from the gallery here:
+
+https://marketplace.visualstudio.com/items?itemName=JonDavis.FastKoala-WebAppconfigXMLtransforms-VS2019
+
+(For VS2017 with Build Scripts support:)
 https://marketplace.visualstudio.com/items?itemName=JonDaviswijitscom.FastKoala-WebAppconfigXMLtransforms-19130
 
-(For VS2015:)
+(For VS2015 with Build Scripts support:)
 https://visualstudiogallery.msdn.microsoft.com/7bc82ddf-e51b-4bb4-942f-d76526a922a0
 
 ### How to use
